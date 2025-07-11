@@ -1,33 +1,31 @@
 {
-  "name": "slopdetector",
-  "version": "1.0.0",
-  "description": "🔥 Professional AI lie detection MCP server",
-  "module": "./src/index.ts",
+  "name": "slopwatch-mcp-server",
+  "version": "2.0.0",
+  "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
+  "main": "src/streamable-http-server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/ai-accountability-server.js --http",
-    "http": "node src/ai-accountability-server.js --http",
-    "test": "node src/ai-accountability-server.js --test"
+    "start": "node src/streamable-http-server.js",
+    "dev": "node src/streamable-http-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "mcp",
     "ai",
-    "lie-detection",
-    "windsurf",
-    "claude"
+    "accountability",
+    "verification",
+    "model-context-protocol"
   ],
   "author": "JoodasCode",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0",
-    "chokidar": "^4.0.3",
-    "fs-extra": "^11.3.0"
+    "nanoid": "^5.0.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/JoodasCode/slopdetector.git"
-  },
-  "bin": {
-    "slopdetector": "./src/server.js"
   }
 }
