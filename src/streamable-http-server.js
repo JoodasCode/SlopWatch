@@ -51,7 +51,7 @@ class SlopWatchStreamableServer {
       },
       serverInfo: {
         name: 'slopwatch-server',
-        version: '2.0.0'
+        version: '2.0.1'
       },
       tools: [
         {
@@ -111,7 +111,7 @@ class SlopWatchStreamableServer {
             },
             serverInfo: {
               name: 'slopwatch-server',
-              version: '2.0.0'
+              version: '2.0.1'
             }
           };
           break;
@@ -409,7 +409,7 @@ class SlopWatchStreamableServer {
           res.end(JSON.stringify({
             status: 'healthy',
             name: 'SlopWatch Server',
-            version: '2.0.0',
+            version: '2.0.1',
             claims: this.claims.size,
             transport: 'Streamable HTTP',
             tools: 3
