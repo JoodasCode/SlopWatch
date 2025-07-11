@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies with verbose logging
+RUN npm ci --only=production --verbose
 
 # Copy source code
 COPY . .
@@ -24,9 +24,9 @@ USER nodejs
 # Expose the port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
+# Health check with better error handling
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD node -e "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
 
-# Run the streamable HTTP server
-CMD ["npm", "start"] 
+# Run the streamable HTTP server with explicit error handling
+CMD ["node", "src/streamable-http-server.js"] 
