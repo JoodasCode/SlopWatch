@@ -14,4 +14,15 @@ startCommand:
         default: false
     required: []
   exampleConfig:
-    debug: false 
+    debug: false
+metadata:
+  name: "SlopWatch MCP Server"
+  description: "AI Accountability MCP Server - Track what AI claims vs what it actually implements"
+  version: "2.0.0"
+  author: "JoodasCode"
+  license: "MIT"
+  tags:
+    - "ai"
+    - "accountability"
+    - "verification"
+    - "mcp" 
