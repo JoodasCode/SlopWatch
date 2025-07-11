@@ -320,8 +320,10 @@ class SlopWatchStreamableServer {
       const url = new URL(req.url, `http://${req.headers.host}`);
       
       try {
-        // Handle MCP endpoint (primary path)
-        if (url.pathname === '/mcp') {
+        // Handle ALL MCP-related endpoints
+        const isMcpEndpoint = url.pathname === '/mcp' || url.pathname === '/' || url.pathname === '/tools' || url.pathname === '/tools/list';
+        
+        if (isMcpEndpoint) {
           if (req.method === 'GET') {
             // Return capabilities for tool discovery
             const response = await this.handleGet(url);
@@ -334,10 +336,12 @@ class SlopWatchStreamableServer {
             // Handle MCP requests
             try {
               const body = await this.getRequestBody(req);
+              console.log(`POST body received: ${body}`);
               const response = await this.handlePost(url, body);
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify(response));
             } catch (error) {
+              console.error(`POST error: ${error.message}`);
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: error.message }));
             }
@@ -365,24 +369,32 @@ class SlopWatchStreamableServer {
           return;
         }
 
-        // Handle alternative MCP endpoints that Smithery might expect
-        if (url.pathname === '/' && req.method === 'POST') {
-          // Some MCP clients expect the root path
-          const response = await this.handlePost(url, await this.getRequestBody(req));
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(response));
-          return;
-        }
-
-        if (url.pathname === '/' && req.method === 'GET') {
-          // Some MCP clients expect capabilities at root
+        // If we get here, it's an unknown endpoint - log it and return MCP capabilities anyway
+        console.log(`Unknown endpoint accessed: ${req.method} ${url.pathname} - Returning MCP capabilities`);
+        
+        if (req.method === 'GET') {
           const response = await this.handleGet(url);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(response));
           return;
         }
+        
+        if (req.method === 'POST') {
+          try {
+            const body = await this.getRequestBody(req);
+            console.log(`Unknown POST endpoint ${url.pathname}, body: ${body}`);
+            const response = await this.handlePost(url, body);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(response));
+          } catch (error) {
+            console.error(`Unknown POST error: ${error.message}`);
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+          }
+          return;
+        }
 
-        // Default response
+        // Default fallback - should not reach here
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`
           <html>
@@ -396,12 +408,13 @@ class SlopWatchStreamableServer {
               </ul>
               <p><strong>Debug Info:</strong></p>
               <p>Request: ${req.method} ${req.url}</p>
-              <p>Available endpoints: /, /mcp, /health</p>
+              <p>Available endpoints: /, /mcp, /health, /tools, /tools/list</p>
             </body>
           </html>
         `);
 
       } catch (error) {
+        console.error(`Server error: ${error.message}`);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: error.message }));
       }
