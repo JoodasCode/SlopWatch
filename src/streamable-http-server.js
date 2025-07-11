@@ -305,6 +305,13 @@ class SlopWatchStreamableServer {
             }
             return;
           }
+
+          if (req.method === 'DELETE') {
+            // Handle session cleanup as required by Smithery
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'Session cleaned up' }));
+            return;
+          }
         }
 
         // Health check
