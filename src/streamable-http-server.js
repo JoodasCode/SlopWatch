@@ -56,37 +56,43 @@ class SlopWatchStreamableServer {
       tools: [
         {
           name: 'slopwatch_claim',
-          description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+          description: 'Register what you are about to implement to verify accuracy',
           inputSchema: {
             type: 'object',
             properties: {
-              claim: { type: 'string', description: 'What you are implementing' },
-              files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
-              type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
-              details: { type: 'string', description: 'Additional implementation details (optional)' }
+              claim: {
+                type: 'string',
+                description: 'What you are implementing'
+              },
+              files: {
+                type: 'array',
+                description: 'Files you will modify',
+                items: { type: 'string' }
+              }
             },
-            required: ['claim', 'files', 'type']
+            required: ['claim']
           }
         },
         {
           name: 'slopwatch_verify',
-          description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+          description: 'Verify implementation matches claim to catch errors',
           inputSchema: {
             type: 'object',
             properties: {
-              claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+              claimId: {
+                type: 'string',
+                description: 'ID of the claim to verify'
+              }
             },
             required: ['claimId']
           }
         },
         {
           name: 'slopwatch_status',
-          description: '📊 Get current AI accountability status and recent verification results',
+          description: 'Get current slop score and statistics',
           inputSchema: {
             type: 'object',
-            properties: {
-              detailed: { type: 'boolean', description: 'Show detailed verification history' }
-            }
+            properties: {}
           }
         }
       ]
@@ -121,37 +127,43 @@ class SlopWatchStreamableServer {
             tools: [
               {
                 name: 'slopwatch_claim',
-                description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+                description: 'Register what you are about to implement to verify accuracy',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    claim: { type: 'string', description: 'What you are implementing' },
-                    files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
-                    type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
-                    details: { type: 'string', description: 'Additional implementation details (optional)' }
+                    claim: {
+                      type: 'string',
+                      description: 'What you are implementing'
+                    },
+                    files: {
+                      type: 'array',
+                      description: 'Files you will modify',
+                      items: { type: 'string' }
+                    }
                   },
-                  required: ['claim', 'files', 'type']
+                  required: ['claim']
                 }
               },
               {
                 name: 'slopwatch_verify',
-                description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+                description: 'Verify implementation matches claim to catch errors',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+                    claimId: {
+                      type: 'string',
+                      description: 'ID of the claim to verify'
+                    }
                   },
                   required: ['claimId']
                 }
               },
               {
                 name: 'slopwatch_status',
-                description: '📊 Get current AI accountability status and recent verification results',
+                description: 'Get current slop score and statistics',
                 inputSchema: {
                   type: 'object',
-                  properties: {
-                    detailed: { type: 'boolean', description: 'Show detailed verification history' }
-                  }
+                  properties: {}
                 }
               }
             ]
@@ -200,16 +212,14 @@ class SlopWatchStreamableServer {
   }
 
   async registerClaim(args) {
-    const { claim, files, type, details } = args;
+    const { claim, files } = args;
     
     const claimId = Math.random().toString(36).substr(2, 9);
     
     const claimRecord = {
       id: claimId,
       claim,
-      files,
-      type,
-      details,
+      files: files || [],
       timestamp: new Date().toISOString(),
       status: 'pending'
     };
@@ -223,8 +233,7 @@ class SlopWatchStreamableServer {
           text: `🎯 AI Claim Registered Successfully!\n\n` +
                 `📋 Claim ID: ${claimId}\n` +
                 `🎯 What: ${claim}\n` +
-                `📁 Files: ${files.join(', ')}\n` +
-                `🏷️ Type: ${type}\n` +
+                `📁 Files: ${files ? files.join(', ') : 'None specified'}\n` +
                 `⏰ Registered: ${new Date().toLocaleTimeString()}\n\n` +
                 `✨ Now make your changes, then call slopwatch_verify("${claimId}") to check if you actually did what you claimed!`
         }
@@ -327,37 +336,43 @@ class SlopWatchStreamableServer {
             tools: [
               {
                 name: 'slopwatch_claim',
-                description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+                description: 'Register what you are about to implement to verify accuracy',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    claim: { type: 'string', description: 'What you are implementing' },
-                    files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
-                    type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
-                    details: { type: 'string', description: 'Additional implementation details (optional)' }
+                    claim: {
+                      type: 'string',
+                      description: 'What you are implementing'
+                    },
+                    files: {
+                      type: 'array',
+                      description: 'Files you will modify',
+                      items: { type: 'string' }
+                    }
                   },
-                  required: ['claim', 'files', 'type']
+                  required: ['claim']
                 }
               },
               {
                 name: 'slopwatch_verify',
-                description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+                description: 'Verify implementation matches claim to catch errors',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+                    claimId: {
+                      type: 'string',
+                      description: 'ID of the claim to verify'
+                    }
                   },
                   required: ['claimId']
                 }
               },
               {
                 name: 'slopwatch_status',
-                description: '📊 Get current AI accountability status and recent verification results',
+                description: 'Get current slop score and statistics',
                 inputSchema: {
                   type: 'object',
-                  properties: {
-                    detailed: { type: 'boolean', description: 'Show detailed verification history' }
-                  }
+                  properties: {}
                 }
               }
             ]
