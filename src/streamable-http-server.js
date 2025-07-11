@@ -30,6 +30,15 @@ class SlopWatchStreamableServer {
     return config;
   }
 
+  // Helper to get request body
+  async getRequestBody(req) {
+    return new Promise((resolve) => {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => resolve(body));
+    });
+  }
+
   // Handle GET requests for initial capabilities
   async handleGet(url) {
     const config = this.parseConfig(url.searchParams);
@@ -256,10 +265,13 @@ class SlopWatchStreamableServer {
 
   setupHttpServer() {
     const server = createServer(async (req, res) => {
+      // Log all incoming requests for debugging
+      console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Headers:`, JSON.stringify(req.headers, null, 2));
+      
       // Enable CORS
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, MCP-Protocol-Version, Mcp-Session-Id');
 
       if (req.method === 'OPTIONS') {
         res.writeHead(200);
@@ -270,6 +282,7 @@ class SlopWatchStreamableServer {
       const url = new URL(req.url, `http://${req.headers.host}`);
       
       try {
+        // Handle MCP endpoint (primary path)
         if (url.pathname === '/mcp') {
           if (req.method === 'GET') {
             // Return capabilities for tool discovery
@@ -281,18 +294,15 @@ class SlopWatchStreamableServer {
 
           if (req.method === 'POST') {
             // Handle MCP requests
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const response = await this.handlePost(url, body);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(response));
-              } catch (error) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: error.message }));
-              }
-            });
+            try {
+              const body = await this.getRequestBody(req);
+              const response = await this.handlePost(url, body);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(response));
+            } catch (error) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: error.message }));
+            }
             return;
           }
         }
@@ -310,6 +320,23 @@ class SlopWatchStreamableServer {
           return;
         }
 
+        // Handle alternative MCP endpoints that Smithery might expect
+        if (url.pathname === '/' && req.method === 'POST') {
+          // Some MCP clients expect the root path
+          const response = await this.handlePost(url, await this.getRequestBody(req));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(response));
+          return;
+        }
+
+        if (url.pathname === '/' && req.method === 'GET') {
+          // Some MCP clients expect capabilities at root
+          const response = await this.handleGet(url);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(response));
+          return;
+        }
+
         // Default response
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`
@@ -322,6 +349,9 @@ class SlopWatchStreamableServer {
                 <li><a href="/health">Health Check</a></li>
                 <li><a href="/mcp">MCP Endpoint</a></li>
               </ul>
+              <p><strong>Debug Info:</strong></p>
+              <p>Request: ${req.method} ${req.url}</p>
+              <p>Available endpoints: /, /mcp, /health</p>
             </body>
           </html>
         `);
