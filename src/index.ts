@@ -4,15 +4,17 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { promises as fs } from 'fs';
 import { createHash } from 'crypto';
 import { createServer } from 'http';
-import { z } from 'zod';
 
-// Configuration schema for Smithery
-export const configSchema = z.object({
-  debug: z.boolean().default(false).describe("Enable debug logging")
-});
+// Configuration interface
+interface Config {
+  debug?: boolean;
+}
 
 // For Smithery compatibility, we export the stateless server function
-export function createStatelessServer({ config }: { config: z.infer<typeof configSchema> }) {
+export function createStatelessServer({ config }: { config?: Config } = {}) {
+  // Use default config if none provided (for tool discovery)
+  const resolvedConfig = config || { debug: false };
+  
   const server = new Server({
     name: 'slopwatch-server',
     version: '2.0.0',
@@ -84,9 +86,9 @@ export function createStatelessServer({ config }: { config: z.infer<typeof confi
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (request.params.name) {
       case 'slopwatch_claim':
-        return await registerClaim(request.params.arguments, claims, config);
+        return await registerClaim(request.params.arguments, claims, resolvedConfig);
       case 'slopwatch_verify':
-        return await verifyClaim(request.params.arguments, claims, verificationResults, config);
+        return await verifyClaim(request.params.arguments, claims, verificationResults, resolvedConfig);
       case 'slopwatch_status':
         return await getStatus(request.params.arguments, claims, verificationResults);
       default:
