@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "slopwatch": {
+      "command": "node",
+      "args": ["/Users/ahassan/Documents/Slop/src/ai-accountability-server.js", "--stdio"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+} 

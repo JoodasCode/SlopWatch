@@ -1,33 +1,33 @@
 {
-  "name": "slopwatch-mcp-server",
+  "name": "slopdetector",
   "version": "1.0.0",
-  "description": "🔥 Professional AI lie detection MCP server for development environments",
+  "description": "🔥 Professional AI lie detection MCP server",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "http": "node src/server.js --http",
-    "test": "node src/server.js --test",
-    "build": "node build.js"
+    "test": "node src/server.js --test"
   },
   "keywords": [
     "mcp",
     "ai",
     "lie-detection",
     "windsurf",
-    "claude",
-    "smithery"
+    "claude"
   ],
   "author": "JoodasCode",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0"
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "chokidar": "^4.0.3",
+    "fs-extra": "^11.3.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/JoodasCode/slopwatch-mcp-server.git"
+    "url": "https://github.com/JoodasCode/slopdetector.git"
   },
   "bin": {
-    "slopwatch-mcp-server": "./src/server.js"
+    "slopdetector": "./src/server.js"
   }
-} 
+}

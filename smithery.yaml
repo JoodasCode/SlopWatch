@@ -1,0 +1,7 @@
+name: slopdetector
+description: "🔥 Professional AI lie detection MCP server"
+port: 3001
+health_check: "/health"
+start_command: "npm start"
+environment: "node"
+mcp_server: true 
