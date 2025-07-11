@@ -9,11 +9,11 @@ import { createHash } from 'crypto';
 import { createServer } from 'http';
 
 /**
- * AI Accountability MCP Server
+ * SlopWatch MCP Server
  * Revolutionary approach: AI voluntarily reports what it's doing
  * and we verify in real-time!
  */
-class AIAccountabilityServer {
+class SlopWatchServer {
   constructor() {
     this.claims = new Map(); // Track active claims
     this.verificationResults = [];
@@ -23,7 +23,7 @@ class AIAccountabilityServer {
     if (!args.includes('--http')) {
       this.server = new Server(
         {
-          name: 'ai-accountability-server',
+          name: 'slopwatch-server',
           version: '2.0.0',
         },
         {
@@ -334,7 +334,7 @@ class AIAccountabilityServer {
     const { claim, files, type } = claimRecord;
     const { isVerified, confidence, supportingEvidence, contradictingEvidence, filesAnalyzed } = verification;
 
-    let output = `\n🔍 AI Accountability Verification Results\n`;
+    let output = `\n🔍 SlopWatch Verification Results\n`;
     output += `═══════════════════════════════════════════\n\n`;
 
     if (isVerified) {
@@ -382,7 +382,7 @@ class AIAccountabilityServer {
     const failedClaims = this.verificationResults.filter(r => !r.isVerified).length;
     const accuracy = totalClaims === 0 ? 100 : Math.round((verifiedClaims / totalClaims) * 100);
 
-    let output = `🔥 AI Accountability Server Status\n\n`;
+    let output = `🔥 SlopWatch Server Status\n\n`;
     output += `📊 Total Claims: ${totalClaims}\n`;
     output += `✅ Verified: ${verifiedClaims}\n`;
     output += `❌ Failed: ${failedClaims}\n`;
@@ -415,7 +415,7 @@ class AIAccountabilityServer {
   setupErrorHandling() {
     if (this.server) { // Only setup if server was initialized
       this.server.onerror = (error) => {
-        console.error('[AI Accountability Server Error]:', error);
+        console.error('[SlopWatch Server Error]:', error);
       };
 
       process.on('SIGINT', async () => {
@@ -442,7 +442,7 @@ class AIAccountabilityServer {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           status: 'healthy',
-          name: 'AI Accountability Server',
+          name: 'SlopWatch Server',
           version: '2.0.0',
           claims: this.claims.size,
           accuracy: this.calculateAccuracy()
@@ -466,9 +466,9 @@ class AIAccountabilityServer {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`
         <html>
-          <head><title>AI Accountability Server</title></head>
+          <head><title>SlopWatch Server</title></head>
           <body>
-            <h1>🔥 AI Accountability Server</h1>
+            <h1>🔥 SlopWatch Server</h1>
             <p>Server is running! Use MCP clients to connect.</p>
             <ul>
               <li><a href="/health">Health Check</a></li>
@@ -498,7 +498,7 @@ class AIAccountabilityServer {
       const port = process.env.PORT || 3001;
       
       httpServer.listen(port, () => {
-        console.log(`🚀 AI Accountability Server running on HTTP port ${port}`);
+        console.log(`🚀 SlopWatch Server running on HTTP port ${port}`);
         console.log(`Health check: http://localhost:${port}/health`);
         console.log(`Status: http://localhost:${port}/status`);
       });
@@ -524,7 +524,7 @@ class AIAccountabilityServer {
       if (this.server) { // Only connect if server was initialized
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
-        console.error('🚀 AI Accountability Server running - AI can now report its claims!');
+        console.error('🚀 SlopWatch Server running - AI can now report its claims!');
       } else {
         console.error('MCP server not initialized. Please run without --http for STDIO mode.');
       }
@@ -532,5 +532,5 @@ class AIAccountabilityServer {
   }
 }
 
-const server = new AIAccountabilityServer();
+const server = new SlopWatchServer();
 server.run().catch(console.error); 
