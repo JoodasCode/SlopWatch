@@ -4,9 +4,6 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
-  port: 3000
-  path: "/mcp"
-  healthCheckPath: "/health"
   configSchema:
     type: "object"
     properties:
@@ -17,7 +14,4 @@ startCommand:
         default: false
     required: []
   exampleConfig:
-    debug: false
-connection:
-  type: "http"
-  url: "/mcp" 
+    debug: false 
