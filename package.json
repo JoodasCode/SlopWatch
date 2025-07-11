@@ -3,6 +3,7 @@
   "version": "2.0.1",
   "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
   "main": "src/mcp-server.js",
+  "module": "src/mcp-server.js",
   "type": "module",
   "scripts": {
     "start": "node src/mcp-server.js",
