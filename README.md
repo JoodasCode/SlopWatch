@@ -1,174 +1,227 @@
-# 🔥 SlopWatch MCP Server
+# SlopWatch MCP Server 🎯
 
-**Professional AI lie detection for Windsurf IDE & Claude Desktop**
+**AI Accountability System** - Track what AI claims vs what it actually implements
 
-SlopWatch is a production-ready Model Context Protocol (MCP) server that provides real-time AI lie detection for code development environments. It analyzes AI claims against actual code to catch false assertions and inconsistencies.
+[![NPM Version](https://img.shields.io/npm/v/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ✨ Features
+## 🎯 What is SlopWatch?
 
-* **🚨 Real-time Lie Detection**: Automatically detects when AI makes false claims about code
-* **📊 Multi-language Support**: JavaScript, TypeScript, Python, CSS, HTML, React
-* **🎯 Pattern Matching**: Advanced regex patterns for different programming concepts
-* **⚡ Fast Analysis**: Optimized for quick analysis of large codebases
-* **🔌 MCP Integration**: Native support for Windsurf and Claude Desktop
-* **📈 Analytics**: Track lies detected and accuracy metrics
+SlopWatch is a Model Context Protocol (MCP) server that provides AI accountability tools. It helps track what AI systems claim they will implement versus what they actually deliver, reducing "AI slop" - the gap between promises and reality.
 
-## 🚀 Quick Start
+### Key Features
 
-### Prerequisites
+- **📋 Claim Registration**: Register what you're about to implement
+- **✅ Implementation Verification**: Verify if claims match reality  
+- **📊 Accountability Tracking**: Get statistics on AI accuracy
+- **🔍 Real-time Monitoring**: Track implementation vs claims in real-time
 
-* Node.js 18 or higher
-* npm or yarn
+## 🚀 Installation
 
-### Installation
-
-1. **Install the package:**
-   ```bash
-   npm install -g slopwatch-mcp-server
-   ```
-
-2. **Configure Windsurf:**
-   Add to your `~/.windsurf/settings.json`:
-   ```json
-   {
-     "mcpServers": {
-       "slopwatch": {
-         "command": "slopwatch-mcp-server",
-         "args": [],
-         "env": {}
-       }
-     }
-   }
-   ```
-
-3. **Restart Windsurf** and start using SlopWatch!
-
-## 📖 Usage
-
-### Available Commands
-
-#### `analyze_claim`
-
-Analyze an AI claim against your actual code:
-
-```
-analyze_claim "I've added comprehensive error handling"
-```
-
-**Parameters:**
-* `claim` (required): The AI claim to analyze
-* `workspaceDir` (optional): Directory to analyze (defaults to current)
-* `fileTypes` (optional): Specific file extensions to check
-* `maxFiles` (optional): Maximum files to analyze (default: 100)
-
-#### `get_status`
-
-Get current SlopWatch statistics:
-
-```
-get_status
-```
-
-**Parameters:**
-* `detailed` (optional): Show detailed statistics
-
-## 🎯 Detection Capabilities
-
-### JavaScript/TypeScript
-* ❌ **Error Handling**: `try/catch` blocks, error objects
-* ⚡ **Async/Await**: Promise handling, async functions
-* ✅ **Validation**: Input validation, type checks
-* 🔒 **Security**: Sanitization, CSRF protection
-
-### CSS
-* 📱 **Responsive Design**: Media queries, flexbox, grid
-* 🌙 **Dark Mode**: Color scheme preferences
-* ♿ **Accessibility**: Focus states, screen reader support
-* 🎨 **Modern Features**: Custom properties, container queries
-
-### Python
-* 🛡️ **Error Handling**: try/except blocks
-* 🏷️ **Type Hints**: Function annotations
-* ⚡ **Async/Await**: Coroutines and async functions
-
-## 🔍 How It Works
-
-1. **Claim Analysis**: Parses AI claims to identify technical assertions
-2. **Pattern Matching**: Uses language-specific regex patterns to scan code
-3. **Evidence Collection**: Gathers supporting and contradicting evidence
-4. **Confidence Scoring**: Calculates likelihood that claim is truthful
-5. **Detailed Reporting**: Provides specific examples and file locations
-
-## 📊 Example Output
-
-```
-🚨 LIE DETECTED: Found 3 contradicting and 0 supporting evidence. 
-The code does not support the AI's claim.
-
-📊 Analysis Details:
-├─ Files analyzed: 23
-├─ Confidence score: 15%
-└─ Evidence found: 3 items
-
-🔍 Evidence:
-   1. ❌ Expected error_handling but none found in src/utils.js
-   2. ❌ Expected error_handling but none found in src/api.js  
-   3. ❌ Expected error_handling but none found in src/main.js
-```
-
-## 🛠️ Development
-
-### Build from Source
+### Method 1: NPM Installation (Recommended)
 
 ```bash
-git clone https://github.com/JoodasCode/slopwatch-mcp-server.git
-cd slopwatch-mcp-server
+# Install globally
+npm install -g slopwatch-mcp-server
+
+# Or install locally in your project
+npm install slopwatch-mcp-server
+```
+
+### Method 2: Direct from GitHub
+
+```bash
+git clone https://github.com/JoodasCode/slopdetector.git
+cd slopdetector
 npm install
+```
+
+## ⚙️ Configuration
+
+### For Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "slopwatch": {
+      "command": "slopwatch-mcp-server"
+    }
+  }
+}
+```
+
+**Configuration file locations:**
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+### For Cursor
+
+Add to your MCP settings in Cursor:
+
+```json
+{
+  "mcpServers": {
+    "slopwatch": {
+      "command": "slopwatch-mcp-server",
+      "args": []
+    }
+  }
+}
+```
+
+### For Other MCP Clients
+
+Use the command: `slopwatch-mcp-server` or the full path to the installed binary.
+
+## 🛠️ Available Tools
+
+### 1. `slopwatch_claim`
+Register what you're about to implement.
+
+**Parameters:**
+- `claim` (string): What you are implementing
+- `files` (array, optional): Files you will modify
+
+**Example:**
+```json
+{
+  "claim": "Add user authentication with JWT tokens",
+  "files": ["auth.js", "middleware.js", "routes/user.js"]
+}
+```
+
+### 2. `slopwatch_verify` 
+Verify if your implementation matches your claim.
+
+**Parameters:**
+- `claimId` (string): ID of the claim to verify
+
+**Example:**
+```json
+{
+  "claimId": "abc123def"
+}
+```
+
+### 3. `slopwatch_status`
+Get current accountability statistics and recent activity.
+
+**Returns:**
+- Total claims made
+- Verified implementations  
+- Accuracy percentage
+- Recent activity summary
+
+## 📖 Usage Examples
+
+### Basic Workflow
+
+1. **Make a Claim**:
+   ```
+   "I'm going to implement user authentication with JWT tokens"
+   ```
+
+2. **Implement Your Code**:
+   ```javascript
+   // Your actual implementation
+   ```
+
+3. **Verify Implementation**:
+   ```
+   "Verify my authentication implementation (claim ID: abc123)"
+   ```
+
+4. **Check Your Stats**:
+   ```
+   "Show my SlopWatch accountability status"
+   ```
+
+### Sample Conversation
+
+```
+User: I'm going to add a dark mode toggle to the settings page
+AI: 🎯 AI Claim Registered Successfully!
+    📋 Claim ID: x7k9m2p
+    🎯 What: Add dark mode toggle to the settings page
+    ⏰ Registered: 2:30 PM
+    
+    ✨ Now make your changes, then call slopwatch_verify("x7k9m2p")
+
+[After implementation]
+
+User: Verify my dark mode implementation  
+AI: ✅ Verification Complete!
+    📋 Claim: Add dark mode toggle to the settings page
+    🎯 Status: VERIFIED
+    📊 Confidence: 92%
+    📝 Details: Implementation matches claim requirements
+```
+
+## 🔧 Development
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/JoodasCode/slopdetector.git
+cd slopdetector
+
+# Install dependencies
+npm install
+
+# Run the server
 npm start
 ```
 
 ### Testing
 
 ```bash
-npm test
+# Run the MCP server locally
+node src/mcp-server.js
+
+# Test with MCP Inspector (if available)
+# The server will be available on stdio transport
 ```
 
-### Contributing
+## 📊 Why Use SlopWatch?
+
+- **🎯 Accountability**: Keep AI implementations honest
+- **📈 Improvement**: Track and improve AI accuracy over time  
+- **🔍 Transparency**: Clear visibility into what was promised vs delivered
+- **⚡ Real-time**: Immediate feedback on implementation quality
+- **📝 Documentation**: Automatic tracking of development claims
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📝 Configuration
-
-### Environment Variables
-
-* `SLOPWATCH_MAX_FILES`: Maximum files to analyze (default: 100)
-* `SLOPWATCH_TIMEOUT`: Analysis timeout in ms (default: 30000)
-* `SLOPWATCH_LOG_LEVEL`: Logging level (default: 'info')
-
-### Custom Patterns
-
-You can extend SlopWatch with custom detection patterns by modifying the patterns configuration.
-
-## 🤝 Support
-
-* **Issues**: [GitHub Issues](https://github.com/JoodasCode/slopwatch-mcp-server/issues)
-* **Discussions**: [GitHub Discussions](https://github.com/JoodasCode/slopwatch-mcp-server/discussions)
-* **Documentation**: [Full Documentation](https://github.com/JoodasCode/slopwatch-mcp-server/wiki)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🔗 Links
 
-* **Model Context Protocol**: Built on Anthropic's MCP standard
-* **Windsurf IDE**: Primary integration target
-* **Claude Desktop**: Secondary integration support
+- **Repository**: https://github.com/JoodasCode/slopdetector
+- **NPM Package**: https://www.npmjs.com/package/slopwatch-mcp-server
+- **Issues**: https://github.com/JoodasCode/slopdetector/issues
+
+## 🆘 Support
+
+If you encounter any issues:
+
+1. Check the [Issues](https://github.com/JoodasCode/slopdetector/issues) page
+2. Create a new issue with detailed information
+3. Include your configuration and error messages
 
 ---
 
-**🔥 Stop the slop. Start the accountability. SlopWatch is watching.** 
+**Made with ❤️ for AI accountability** 
