@@ -6,6 +6,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { promises as fs } from 'fs';
 import { join, extname } from 'path';
 import { createHash } from 'crypto';
+import { createServer } from 'http';
 
 /**
  * AI Accountability MCP Server
@@ -416,10 +417,89 @@ class AIAccountabilityServer {
     });
   }
 
+  setupHttpServer() {
+    const httpServer = createServer((req, res) => {
+      // Enable CORS
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+
+      if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          status: 'healthy',
+          name: 'AI Accountability Server',
+          version: '2.0.0',
+          claims: this.claims.size,
+          accuracy: this.calculateAccuracy()
+        }));
+        return;
+      }
+
+      if (req.url === '/status') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          totalClaims: this.claims.size,
+          verifiedClaims: this.verificationResults.filter(r => r.isVerified).length,
+          failedClaims: this.verificationResults.filter(r => !r.isVerified).length,
+          accuracy: this.calculateAccuracy(),
+          recentResults: this.verificationResults.slice(-5)
+        }));
+        return;
+      }
+
+      // Default response
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(`
+        <html>
+          <head><title>AI Accountability Server</title></head>
+          <body>
+            <h1>🔥 AI Accountability Server</h1>
+            <p>Server is running! Use MCP clients to connect.</p>
+            <ul>
+              <li><a href="/health">Health Check</a></li>
+              <li><a href="/status">Status Dashboard</a></li>
+            </ul>
+          </body>
+        </html>
+      `);
+    });
+
+    return httpServer;
+  }
+
+  calculateAccuracy() {
+    const totalClaims = this.verificationResults.length;
+    if (totalClaims === 0) return 100;
+    const verifiedClaims = this.verificationResults.filter(r => r.isVerified).length;
+    return Math.round((verifiedClaims / totalClaims) * 100);
+  }
+
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('🚀 AI Accountability Server running - AI can now report its claims!');
+    const args = process.argv.slice(2);
+    
+    if (args.includes('--http')) {
+      // HTTP mode for Smithery deployment
+      const httpServer = this.setupHttpServer();
+      const port = process.env.PORT || 3001;
+      
+      httpServer.listen(port, () => {
+        console.log(`🚀 AI Accountability Server running on HTTP port ${port}`);
+        console.log(`Health check: http://localhost:${port}/health`);
+        console.log(`Status: http://localhost:${port}/status`);
+      });
+    } else {
+      // STDIO mode for MCP clients
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      console.error('🚀 AI Accountability Server running - AI can now report its claims!');
+    }
   }
 }
 
