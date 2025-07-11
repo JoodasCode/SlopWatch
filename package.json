@@ -5,9 +5,9 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "http": "node src/server.js --http",
-    "test": "node src/server.js --test"
+    "start": "node src/ai-accountability-server.js --http",
+    "http": "node src/ai-accountability-server.js --http",
+    "test": "node src/ai-accountability-server.js --test"
   },
   "keywords": [
     "mcp",
