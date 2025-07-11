@@ -5,6 +5,24 @@ import { promises as fs } from 'fs';
 import { createHash } from 'crypto';
 import { createServer } from 'http';
 
+// Configuration schema for Smithery CLI
+export const configSchema = {
+  type: "object",
+  properties: {
+    debug: {
+      type: "boolean",
+      title: "Debug Mode", 
+      description: "Enable debug logging",
+      default: false
+    }
+  },
+  required: []
+};
+
+export const exampleConfig = {
+  debug: false
+};
+
 // Configuration interface
 interface Config {
   debug?: boolean;

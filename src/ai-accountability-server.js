@@ -426,10 +426,10 @@ class SlopWatchServer {
   }
 
   setupHttpServer() {
-    const httpServer = createServer((req, res) => {
+    const httpServer = createServer(async (req, res) => {
       // Enable CORS
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
       if (req.method === 'OPTIONS') {
@@ -438,7 +438,118 @@ class SlopWatchServer {
         return;
       }
 
-      if (req.url === '/health') {
+      // Parse URL and query parameters
+      const urlParts = new URL(req.url, `http://${req.headers.host}`);
+      const pathname = urlParts.pathname;
+      const queryParams = Object.fromEntries(urlParts.searchParams);
+
+      // MCP endpoint for Smithery
+      if (pathname === '/mcp') {
+        try {
+          if (req.method === 'GET') {
+            // Return server capabilities for initial connection
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              protocolVersion: "2024-11-05",
+              capabilities: {
+                tools: {}
+              },
+              serverInfo: {
+                name: 'slopwatch-server',
+                version: '2.0.0'
+              }
+            }));
+            return;
+          }
+
+          if (req.method === 'POST') {
+            // Handle MCP tool requests
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk;
+            });
+
+            req.on('end', async () => {
+              try {
+                const request = JSON.parse(body);
+                let response;
+
+                if (request.method === 'tools/list') {
+                  response = {
+                    tools: [
+                      {
+                        name: 'slopwatch_claim',
+                        description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+                        inputSchema: {
+                          type: 'object',
+                          properties: {
+                            claim: { type: 'string', description: 'What you are implementing' },
+                            files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
+                            type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
+                            details: { type: 'string', description: 'Additional implementation details (optional)' }
+                          },
+                          required: ['claim', 'files', 'type']
+                        }
+                      },
+                      {
+                        name: 'slopwatch_verify',
+                        description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+                        inputSchema: {
+                          type: 'object',
+                          properties: {
+                            claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+                          },
+                          required: ['claimId']
+                        }
+                      },
+                      {
+                        name: 'slopwatch_status',
+                        description: '📊 Get current AI accountability status and recent verification results',
+                        inputSchema: {
+                          type: 'object',
+                          properties: {
+                            detailed: { type: 'boolean', description: 'Show detailed verification history' }
+                          }
+                        }
+                      }
+                    ]
+                  };
+                } else if (request.method === 'tools/call') {
+                  const { name, arguments: args } = request.params;
+                  
+                  switch (name) {
+                    case 'slopwatch_claim':
+                      response = await this.registerClaim(args);
+                      break;
+                    case 'slopwatch_verify':
+                      response = await this.verifyClaim(args);
+                      break;
+                    case 'slopwatch_status':
+                      response = await this.getStatus(args);
+                      break;
+                    default:
+                      throw new Error(`Unknown tool: ${name}`);
+                  }
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(response));
+              } catch (error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error.message }));
+              }
+            });
+            return;
+          }
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
+      }
+
+      // Health check endpoint
+      if (pathname === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           status: 'healthy',
@@ -450,7 +561,8 @@ class SlopWatchServer {
         return;
       }
 
-      if (req.url === '/status') {
+      // Status endpoint
+      if (pathname === '/status') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           totalClaims: this.claims.size,
@@ -473,6 +585,7 @@ class SlopWatchServer {
             <ul>
               <li><a href="/health">Health Check</a></li>
               <li><a href="/status">Status Dashboard</a></li>
+              <li><a href="/mcp">MCP Endpoint</a></li>
             </ul>
           </body>
         </html>
@@ -495,7 +608,7 @@ class SlopWatchServer {
     if (args.includes('--http')) {
       // HTTP mode for Smithery deployment
       const httpServer = this.setupHttpServer();
-      const port = process.env.PORT || 3001;
+      const port = process.env.PORT || 3000;
       
       httpServer.listen(port, () => {
         console.log(`🚀 SlopWatch Server running on HTTP port ${port}`);
