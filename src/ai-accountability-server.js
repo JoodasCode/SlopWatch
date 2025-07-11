@@ -511,6 +511,14 @@ class AIAccountabilityServer {
         });
       });
       
+      // Keep the process alive in HTTP mode
+      process.on('SIGTERM', () => {
+        console.log('Received SIGTERM, shutting down gracefully');
+        httpServer.close(() => {
+          process.exit(0);
+        });
+      });
+      
     } else {
       // STDIO mode for MCP clients
       if (this.server) { // Only connect if server was initialized
@@ -518,7 +526,7 @@ class AIAccountabilityServer {
         await this.server.connect(transport);
         console.error('🚀 AI Accountability Server running - AI can now report its claims!');
       } else {
-        console.error('MCP server not initialized. Please run with --http for STDIO mode.');
+        console.error('MCP server not initialized. Please run without --http for STDIO mode.');
       }
     }
   }
