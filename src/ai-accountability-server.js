@@ -530,6 +530,8 @@ class SlopWatchServer {
                     default:
                       throw new Error(`Unknown tool: ${name}`);
                   }
+                } else {
+                  throw new Error(`Unknown method: ${request.method}`);
                 }
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -610,13 +612,19 @@ class SlopWatchServer {
       const httpServer = this.setupHttpServer();
       const port = process.env.PORT || 3000;
       
-      httpServer.listen(port, () => {
+      httpServer.listen(port, '0.0.0.0', () => {
         console.log(`🚀 SlopWatch Server running on HTTP port ${port}`);
-        console.log(`Health check: http://localhost:${port}/health`);
-        console.log(`Status: http://localhost:${port}/status`);
+        console.log(`Health check: http://0.0.0.0:${port}/health`);
+        console.log(`Status: http://0.0.0.0:${port}/status`);
+        console.log(`MCP endpoint: http://0.0.0.0:${port}/mcp`);
       });
       
-      // Keep the process alive in HTTP mode
+      httpServer.on('error', (error) => {
+        console.error('Server error:', error);
+        process.exit(1);
+      });
+      
+      // Graceful shutdown handling
       process.on('SIGTERM', () => {
         console.log('Received SIGTERM, shutting down gracefully');
         httpServer.close(() => {
@@ -624,9 +632,8 @@ class SlopWatchServer {
         });
       });
       
-      // Keep the process alive in HTTP mode
-      process.on('SIGTERM', () => {
-        console.log('Received SIGTERM, shutting down gracefully');
+      process.on('SIGINT', () => {
+        console.log('Received SIGINT, shutting down gracefully');
         httpServer.close(() => {
           process.exit(0);
         });
@@ -646,4 +653,7 @@ class SlopWatchServer {
 }
 
 const server = new SlopWatchServer();
-server.run().catch(console.error); 
+server.run().catch((error) => {
+  console.error('Failed to start SlopWatch Server:', error);
+  process.exit(1);
+}); 
