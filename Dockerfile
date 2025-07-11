@@ -28,5 +28,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
 
-# Run the server in HTTP mode
-CMD ["node", "src/ai-accountability-server.js", "--http"] 
+# Run the streamable HTTP server
+CMD ["node", "src/streamable-http-server.js"] 
