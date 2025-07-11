@@ -2,11 +2,11 @@
   "name": "slopwatch-mcp-server",
   "version": "2.0.1",
   "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
-  "main": "src/streamable-http-server.js",
+  "main": "src/mcp-server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/streamable-http-server.js",
-    "dev": "node src/streamable-http-server.js",
+    "start": "node src/mcp-server.js",
+    "dev": "node src/mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -19,6 +19,7 @@
   "author": "JoodasCode",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
     "nanoid": "^5.0.8"
   },
   "engines": {

@@ -28,5 +28,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD node -e "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
 
-# Run the streamable HTTP server with explicit error handling
-CMD ["node", "src/streamable-http-server.js"] 
+# Run the MCP server with explicit error handling
+CMD ["node", "src/mcp-server.js"] 
