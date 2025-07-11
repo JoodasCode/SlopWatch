@@ -15,25 +15,31 @@ import { createServer } from 'http';
  */
 class AIAccountabilityServer {
   constructor() {
-    this.server = new Server(
-      {
-        name: 'ai-accountability-server',
-        version: '2.0.0',
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    );
-
     this.claims = new Map(); // Track active claims
     this.verificationResults = [];
-    this.setupTools();
-    this.setupErrorHandling();
+    
+    // Only initialize MCP server for STDIO mode
+    const args = process.argv.slice(2);
+    if (!args.includes('--http')) {
+      this.server = new Server(
+        {
+          name: 'ai-accountability-server',
+          version: '2.0.0',
+        },
+        {
+          capabilities: {
+            tools: {},
+          },
+        }
+      );
+      this.setupTools();
+      this.setupErrorHandling();
+    }
   }
 
   setupTools() {
+    if (!this.server) return; // Skip if in HTTP mode
+    
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
@@ -407,14 +413,16 @@ class AIAccountabilityServer {
   }
 
   setupErrorHandling() {
-    this.server.onerror = (error) => {
-      console.error('[AI Accountability Server Error]:', error);
-    };
+    if (this.server) { // Only setup if server was initialized
+      this.server.onerror = (error) => {
+        console.error('[AI Accountability Server Error]:', error);
+      };
 
-    process.on('SIGINT', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
+      process.on('SIGINT', async () => {
+        await this.server.close();
+        process.exit(0);
+      });
+    }
   }
 
   setupHttpServer() {
@@ -494,11 +502,24 @@ class AIAccountabilityServer {
         console.log(`Health check: http://localhost:${port}/health`);
         console.log(`Status: http://localhost:${port}/status`);
       });
+      
+      // Keep the process alive in HTTP mode
+      process.on('SIGTERM', () => {
+        console.log('Received SIGTERM, shutting down gracefully');
+        httpServer.close(() => {
+          process.exit(0);
+        });
+      });
+      
     } else {
       // STDIO mode for MCP clients
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      console.error('🚀 AI Accountability Server running - AI can now report its claims!');
+      if (this.server) { // Only connect if server was initialized
+        const transport = new StdioServerTransport();
+        await this.server.connect(transport);
+        console.error('🚀 AI Accountability Server running - AI can now report its claims!');
+      } else {
+        console.error('MCP server not initialized. Please run with --http for STDIO mode.');
+      }
     }
   }
 }
