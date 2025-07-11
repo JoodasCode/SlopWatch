@@ -7,6 +7,11 @@ startCommand:
   configSchema:
     type: "object"
     properties:
+      apiKey:
+        type: "string"
+        title: "API Key"
+        description: "Optional API key for authentication (leave empty for public access)"
+        default: ""
       debug:
         type: "boolean"
         title: "Debug Mode"
@@ -14,4 +19,5 @@ startCommand:
         default: false
     required: []
   exampleConfig:
+    apiKey: ""
     debug: false 
