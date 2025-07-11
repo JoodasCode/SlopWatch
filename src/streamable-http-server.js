@@ -35,7 +35,7 @@ class SlopWatchStreamableServer {
     const config = this.parseConfig(url.searchParams);
     
     return {
-      protocolVersion: "2024-11-05",
+      protocolVersion: "2025-06-18",
       capabilities: {
         tools: {}
       },
@@ -52,12 +52,13 @@ class SlopWatchStreamableServer {
     
     try {
       const request = JSON.parse(body);
+      let result;
       
       // Handle different MCP request types
       switch (request.method) {
         case 'initialize':
-          return {
-            protocolVersion: "2024-11-05",
+          result = {
+            protocolVersion: "2025-06-18",
             capabilities: {
               tools: {}
             },
@@ -66,9 +67,10 @@ class SlopWatchStreamableServer {
               version: '2.0.0'
             }
           };
+          break;
 
         case 'tools/list':
-          return {
+          result = {
             tools: [
               {
                 name: 'slopwatch_claim',
@@ -107,26 +109,41 @@ class SlopWatchStreamableServer {
               }
             ]
           };
+          break;
 
         case 'tools/call':
           const { name, arguments: args } = request.params;
           
           switch (name) {
             case 'slopwatch_claim':
-              return await this.registerClaim(args);
+              result = await this.registerClaim(args);
+              break;
             case 'slopwatch_verify':
-              return await this.verifyClaim(args);
+              result = await this.verifyClaim(args);
+              break;
             case 'slopwatch_status':
-              return await this.getStatus(args);
+              result = await this.getStatus(args);
+              break;
             default:
               throw new Error(`Unknown tool: ${name}`);
           }
+          break;
 
         default:
           throw new Error(`Unknown method: ${request.method}`);
       }
+
+      // Return proper JSON-RPC response
+      return {
+        jsonrpc: "2.0",
+        id: request.id,
+        result: result
+      };
+
     } catch (error) {
       return {
+        jsonrpc: "2.0",
+        id: request.id || null,
         error: {
           code: -32603,
           message: error.message
