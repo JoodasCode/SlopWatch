@@ -43,6 +43,7 @@ class SlopWatchStreamableServer {
   async handleGet(url) {
     const config = this.parseConfig(url.searchParams);
     
+    // Return capabilities with tools for lazy loading discovery
     return {
       protocolVersion: "2025-06-18",
       capabilities: {
@@ -51,7 +52,44 @@ class SlopWatchStreamableServer {
       serverInfo: {
         name: 'slopwatch-server',
         version: '2.0.0'
-      }
+      },
+      tools: [
+        {
+          name: 'slopwatch_claim',
+          description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              claim: { type: 'string', description: 'What you are implementing' },
+              files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
+              type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
+              details: { type: 'string', description: 'Additional implementation details (optional)' }
+            },
+            required: ['claim', 'files', 'type']
+          }
+        },
+        {
+          name: 'slopwatch_verify',
+          description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+            },
+            required: ['claimId']
+          }
+        },
+        {
+          name: 'slopwatch_status',
+          description: '📊 Get current AI accountability status and recent verification results',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              detailed: { type: 'boolean', description: 'Show detailed verification history' }
+            }
+          }
+        }
+      ]
     };
   }
 
