@@ -2,7 +2,7 @@
   "name": "slopdetector",
   "version": "1.0.0",
   "description": "🔥 Professional AI lie detection MCP server",
-  "main": "src/server.js",
+  "module": "./src/index.ts",
   "type": "module",
   "scripts": {
     "start": "node src/ai-accountability-server.js --http",
@@ -21,7 +21,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "chokidar": "^4.0.3",
-    "fs-extra": "^11.3.0"
+    "fs-extra": "^11.3.0",
+    "zod": "^4.0.5"
   },
   "repository": {
     "type": "git",

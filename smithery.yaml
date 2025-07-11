@@ -1,7 +1,14 @@
-name: slopdetector
-description: "🔥 Professional AI lie detection MCP server"
-port: 3001
-health_check: "/health"
-start_command: "npm start"
-environment: "node"
-mcp_server: true 
+runtime: "typescript"
+startCommand:
+  type: "http"
+  configSchema:
+    type: "object"
+    properties:
+      debug:
+        type: "boolean"
+        title: "Debug Mode"
+        description: "Enable debug logging"
+        default: false
+    required: []
+  exampleConfig:
+    debug: false 
