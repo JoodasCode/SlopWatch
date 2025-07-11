@@ -1,0 +1,44 @@
+{
+  "name": "@t3-oss/env-core",
+  "version": "0.11.1",
+  "type": "module",
+  "keywords": ["create-t3-app", "environment variables", "zod"],
+  "author": "Julius Marminge",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t3-oss/t3-env",
+    "directory": "packages/core"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "default": "./dist/presets.js"
+    }
+  },
+  "files": ["dist", "package.json", "LICENSE", "README.md"],
+  "scripts": {
+    "build": "bunchee",
+    "dev": "bunchee -w --no-clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0",
+    "zod": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "bunchee": "^5.1.2",
+    "typescript": "^5.4.5",
+    "zod": "^3.23.0"
+  }
+}
