@@ -320,8 +320,55 @@ class SlopWatchStreamableServer {
       const url = new URL(req.url, `http://${req.headers.host}`);
       
       try {
+        // SPECIAL CASE: Handle /tools endpoint for Smithery tool discovery
+        if (url.pathname === '/tools' && req.method === 'GET') {
+          console.log('🔍 Smithery tool discovery request detected - returning tools list');
+          const toolsResponse = {
+            tools: [
+              {
+                name: 'slopwatch_claim',
+                description: '🎯 Register what you are about to implement (AI should call this BEFORE making changes)',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    claim: { type: 'string', description: 'What you are implementing' },
+                    files: { type: 'array', items: { type: 'string' }, description: 'Files you will modify' },
+                    type: { type: 'string', description: 'Implementation type (css, js, react, python, etc.)' },
+                    details: { type: 'string', description: 'Additional implementation details (optional)' }
+                  },
+                  required: ['claim', 'files', 'type']
+                }
+              },
+              {
+                name: 'slopwatch_verify',
+                description: '✅ Verify that your implementation matches your claim (AI should call this AFTER making changes)',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    claimId: { type: 'string', description: 'The claim ID returned from slopwatch_claim' }
+                  },
+                  required: ['claimId']
+                }
+              },
+              {
+                name: 'slopwatch_status',
+                description: '📊 Get current AI accountability status and recent verification results',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    detailed: { type: 'boolean', description: 'Show detailed verification history' }
+                  }
+                }
+              }
+            ]
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(toolsResponse));
+          return;
+        }
+
         // Handle ALL MCP-related endpoints
-        const isMcpEndpoint = url.pathname === '/mcp' || url.pathname === '/' || url.pathname === '/tools' || url.pathname === '/tools/list';
+        const isMcpEndpoint = url.pathname === '/mcp' || url.pathname === '/' || url.pathname === '/tools/list';
         
         if (isMcpEndpoint) {
           if (req.method === 'GET') {
@@ -364,7 +411,8 @@ class SlopWatchStreamableServer {
             name: 'SlopWatch Server',
             version: '2.0.0',
             claims: this.claims.size,
-            transport: 'Streamable HTTP'
+            transport: 'Streamable HTTP',
+            tools: 3
           }));
           return;
         }
@@ -405,6 +453,13 @@ class SlopWatchStreamableServer {
               <ul>
                 <li><a href="/health">Health Check</a></li>
                 <li><a href="/mcp">MCP Endpoint</a></li>
+                <li><a href="/tools">Tools Discovery</a></li>
+              </ul>
+              <p><strong>Tools Available:</strong></p>
+              <ul>
+                <li>slopwatch_claim - Register implementation claims</li>
+                <li>slopwatch_verify - Verify implementations</li>
+                <li>slopwatch_status - Get accountability status</li>
               </ul>
               <p><strong>Debug Info:</strong></p>
               <p>Request: ${req.method} ${req.url}</p>
