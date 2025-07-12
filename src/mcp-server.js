@@ -19,7 +19,7 @@ class SlopWatchServer {
     this.server = new Server(
       {
         name: 'slopwatch-server',
-        version: '2.6.0',
+        version: '2.7.0',
       },
       {
         capabilities: {
@@ -61,44 +61,6 @@ class SlopWatchServer {
                 }
               },
               required: ['claim', 'originalFileContents', 'updatedFileContents']
-            }
-          },
-          {
-            name: 'slopwatch_claim',
-            description: 'Register what you are about to implement to verify accuracy',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                claim: {
-                  type: 'string',
-                  description: 'What you are implementing'
-                },
-                fileContents: {
-                  type: 'object',
-                  description: 'Current content of files you will modify (filename -> content)',
-                  additionalProperties: { type: 'string' }
-                }
-              },
-              required: ['claim']
-            }
-          },
-          {
-            name: 'slopwatch_verify',
-            description: 'Verify implementation matches claim to catch errors',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                claimId: {
-                  type: 'string',
-                  description: 'ID of the claim to verify'
-                },
-                updatedFileContents: {
-                  type: 'object',
-                  description: 'Updated content of files after implementation (filename -> content)',
-                  additionalProperties: { type: 'string' }
-                }
-              },
-              required: ['claimId', 'updatedFileContents']
             }
           },
           {
@@ -145,10 +107,6 @@ class SlopWatchServer {
       switch (name) {
         case 'slopwatch_claim_and_verify':
           return await this.handleClaimAndVerify(args);
-        case 'slopwatch_claim':
-          return await this.handleClaim(args);
-        case 'slopwatch_verify':
-          return await this.handleVerify(args);
         case 'slopwatch_status':
           return await this.handleStatus(args);
         case 'slopwatch_setup_rules':
@@ -228,99 +186,7 @@ class SlopWatchServer {
     }
   }
 
-  async handleClaim(args) {
-    const { claim, fileContents = {} } = args;
-    
-    const claimId = Math.random().toString(36).substr(2, 9);
-    
-    // Create file snapshots from provided content
-    const fileSnapshots = {};
-    const fileList = Object.keys(fileContents);
-    
-    for (const [filename, content] of Object.entries(fileContents)) {
-      fileSnapshots[filename] = {
-        hash: crypto.createHash('sha256').update(content || '').digest('hex'),
-        content: content || '',
-        exists: true
-      };
-    }
-    
-    const claimRecord = {
-      id: claimId,
-      claim,
-      files: fileList,
-      timestamp: new Date().toISOString(),
-      status: 'pending',
-      fileSnapshots
-    };
 
-    this.claims.set(claimId, claimRecord);
-
-    // Track claim registration
-    analytics.trackClaim(claimId, fileList.length, fileList.length > 0);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Claim ID: ${claimId}`
-        }
-      ]
-    };
-  }
-
-  async handleVerify(args) {
-    const { claimId, updatedFileContents } = args;
-    
-    const claimRecord = this.claims.get(claimId);
-    if (!claimRecord) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `❌ Claim ${claimId} not found`
-          }
-        ]
-      };
-    }
-
-    try {
-      const result = await this.analyzeImplementation(claimRecord, updatedFileContents);
-      
-      // Store verification result
-      claimRecord.status = result.isVerified ? 'verified' : 'failed';
-      this.verificationResults.push({
-        ...result,
-        claimId,
-        timestamp: new Date().toISOString(),
-        claim: claimRecord.claim
-      });
-
-      // Track verification
-      analytics.trackVerification(claimId, result.isVerified, result.confidence);
-
-      const statusEmoji = result.isVerified ? '✅' : '❌';
-      const statusText = result.isVerified ? 'PASSED' : 'FAILED';
-      
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `${statusEmoji} ${statusText} (${result.confidence}%)`
-          }
-        ]
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `❌ Error: ${error.message}`
-          }
-        ]
-      };
-    }
-  }
 
   async analyzeImplementation(claimRecord, updatedFileContents) {
     const { claim, files, fileSnapshots } = claimRecord;
@@ -573,7 +439,7 @@ Remember: SlopWatch v2.6.0 features ultra-minimal responses and combined tools f
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('SlopWatch MCP Server v2.6.0 running on stdio (MCP Resource Mode)');
+    console.error('SlopWatch MCP Server v2.7.0 running on stdio (MCP Resource Mode)');
   }
 }
 
