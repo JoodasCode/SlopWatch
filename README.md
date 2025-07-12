@@ -5,7 +5,7 @@
 [![NPM Version](https://img.shields.io/npm/v/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![NPM Downloads](https://img.shields.io/npm/dt/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![NPM Downloads Weekly](https://img.shields.io/npm/dw/slopwatch-mcp-server?label=downloads&color=green)](https://www.npmjs.com/package/slopwatch-mcp-server)
-[![Available on Smithery.ai](https://img.shields.io/badge/Available_on-Smithery.ai-orange)](https://smithery.ai)
+[![Available on Smithery.ai](https://img.shields.io/badge/Available_on-Smithery.ai-orange)](https://smithery.ai/server/@JoodasCode/slopwatch)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
