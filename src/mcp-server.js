@@ -19,7 +19,7 @@ class SlopWatchServer {
     this.server = new Server(
       {
         name: 'slopwatch-server',
-        version: '2.4.0',
+        version: '2.6.0',
       },
       {
         capabilities: {
@@ -39,6 +39,30 @@ class SlopWatchServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
+          {
+            name: 'slopwatch_claim_and_verify',
+            description: 'Register claim and verify implementation in one call - reduces from 2 tool calls to 1',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                claim: {
+                  type: 'string',
+                  description: 'What you implemented'
+                },
+                originalFileContents: {
+                  type: 'object',
+                  description: 'Original content of files before implementation (filename -> content)',
+                  additionalProperties: { type: 'string' }
+                },
+                updatedFileContents: {
+                  type: 'object',
+                  description: 'Updated content of files after implementation (filename -> content)',
+                  additionalProperties: { type: 'string' }
+                }
+              },
+              required: ['claim', 'originalFileContents', 'updatedFileContents']
+            }
+          },
           {
             name: 'slopwatch_claim',
             description: 'Register what you are about to implement to verify accuracy',
@@ -119,6 +143,8 @@ class SlopWatchServer {
       const { name, arguments: args } = request.params;
 
       switch (name) {
+        case 'slopwatch_claim_and_verify':
+          return await this.handleClaimAndVerify(args);
         case 'slopwatch_claim':
           return await this.handleClaim(args);
         case 'slopwatch_verify':
@@ -131,6 +157,75 @@ class SlopWatchServer {
           throw new Error(`Unknown tool: ${name}`);
       }
     });
+  }
+
+  async handleClaimAndVerify(args) {
+    const { claim, originalFileContents, updatedFileContents } = args;
+    
+    const claimId = Math.random().toString(36).substr(2, 9);
+    
+    // Create file snapshots from provided content
+    const fileSnapshots = {};
+    const fileList = Object.keys(originalFileContents);
+    
+    for (const [filename, content] of Object.entries(originalFileContents)) {
+      fileSnapshots[filename] = {
+        hash: crypto.createHash('sha256').update(content || '').digest('hex'),
+        content: content || '',
+        exists: true
+      };
+    }
+    
+    const claimRecord = {
+      id: claimId,
+      claim,
+      files: fileList,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      fileSnapshots
+    };
+
+    this.claims.set(claimId, claimRecord);
+
+    // Track claim registration
+    analytics.trackClaim(claimId, fileList.length, fileList.length > 0);
+
+    try {
+      const result = await this.analyzeImplementation(claimRecord, updatedFileContents);
+      
+      // Store verification result
+      claimRecord.status = result.isVerified ? 'verified' : 'failed';
+      this.verificationResults.push({
+        ...result,
+        claimId,
+        timestamp: new Date().toISOString(),
+        claim: claimRecord.claim
+      });
+
+      // Track verification
+      analytics.trackVerification(claimId, result.isVerified, result.confidence);
+
+      const statusEmoji = result.isVerified ? '✅' : '❌';
+      const statusText = result.isVerified ? 'PASSED' : 'FAILED';
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${statusEmoji} ${statusText} (${result.confidence}%)`
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Error: ${error.message}`
+          }
+        ]
+      };
+    }
   }
 
   async handleClaim(args) {
@@ -168,13 +263,7 @@ class SlopWatchServer {
       content: [
         {
           type: 'text',
-          text: `🎯 AI Claim Registered Successfully!\n\n` +
-                `📋 Claim ID: ${claimId}\n` +
-                `🎯 What: ${claim}\n` +
-                `📁 Files: ${fileList.length > 0 ? fileList.join(', ') : 'None specified'}\n` +
-                `📸 Snapshots: ${fileList.length} files captured\n` +
-                `⏰ Registered: ${new Date().toLocaleTimeString()}\n\n` +
-                `✨ Now make your changes, then call slopwatch_verify("${claimId}") with the updated file contents to check if you actually did what you claimed!`
+          text: `Claim ID: ${claimId}`
         }
       ]
     };
@@ -189,7 +278,7 @@ class SlopWatchServer {
         content: [
           {
             type: 'text',
-            text: `❌ Claim ID ${claimId} not found. Please register a claim first using slopwatch_claim.`
+            text: `❌ Claim ${claimId} not found`
           }
         ]
       };
@@ -217,12 +306,7 @@ class SlopWatchServer {
         content: [
           {
             type: 'text',
-            text: `${statusEmoji} Verification Complete!\n\n` +
-                  `📋 Claim: ${claimRecord.claim}\n` +
-                  `🎯 Status: ${statusText}\n` +
-                  `📊 Confidence: ${result.confidence}%\n` +
-                  `📝 Details: ${result.details}\n` +
-                  `📊 Analysis: ${result.analysis}`
+            text: `${statusEmoji} ${statusText} (${result.confidence}%)`
           }
         ]
       };
@@ -231,7 +315,7 @@ class SlopWatchServer {
         content: [
           {
             type: 'text',
-            text: `❌ Verification failed: ${error.message}`
+            text: `❌ Error: ${error.message}`
           }
         ]
       };
@@ -360,14 +444,7 @@ class SlopWatchServer {
       content: [
         {
           type: 'text',
-          text: `📊 SlopWatch Status Dashboard\n\n` +
-                `📋 Total Claims: ${totalClaims}\n` +
-                `✅ Verified: ${verifiedClaims}\n` +
-                `❌ Failed: ${totalClaims - verifiedClaims}\n` +
-                `🎯 Accuracy: ${accuracy}%\n\n` +
-                `Recent activity: ${this.verificationResults.slice(-3).map(r => 
-                  `${r.isVerified ? '✅' : '❌'} ${r.claim.slice(0, 30)}...`
-                ).join('\n')}`
+          text: `Accuracy: ${accuracy}% (${verifiedClaims}/${totalClaims})`
         }
       ]
     };
@@ -376,156 +453,29 @@ class SlopWatchServer {
   async handleSetupRules(args) {
     const { project_path, overwrite = false } = args;
     
-    // Since we can't access file system directly in hosted mode,
-    // return the rules content for the user to save manually
-    const rulesContent = `# AI Accountability Rules - SlopWatch Integration
-# These rules enforce automatic verification of AI implementations
+    // Return minimal rules content focusing on core enforcement
+    const rulesContent = `# SlopWatch AI Accountability Rules
 
-## MANDATORY ACCOUNTABILITY PROTOCOL
+## MANDATORY PROTOCOL
+- Before ANY code changes: Call mcp_SlopWatch_slopwatch_claim
+- After implementation: Call mcp_SlopWatch_slopwatch_verify  
+- NEVER skip verification
+- Fix failed verifications immediately
 
-### 1. IMPLEMENTATION CLAIM DETECTION
-When you mention ANY of these phrases, you MUST use SlopWatch:
-- "I will implement"
-- "I will add"
-- "I will create" 
-- "I will modify"
-- "I will fix"
-- "I will update"
-- "I will build"
-- "I will write"
-- "Let me implement"
-- "Let me add"
-- "Let me create"
-- "Let me modify"
-- "Let me fix"
-- "Let me update"
+## TRIGGER PHRASES
+"I will implement/add/create/modify/fix/update/build/write"
+"Let me implement/add/create/modify/fix/update"
 
-### 2. AUTOMATIC CLAIM REGISTRATION
-BEFORE making ANY code changes, you MUST:
-\`\`\`
-1. Call: mcp_SlopWatch_slopwatch_claim
-   - claim: "Specific description of what you're implementing"
-   - fileContents: { "filename": "current_content" }
-   
-2. Save the claim ID for verification
-\`\`\`
-
-### 3. MANDATORY VERIFICATION
-AFTER making changes, you MUST:
-\`\`\`
-1. Call: mcp_SlopWatch_slopwatch_verify
-   - claimId: "the_claim_id_from_step_2"
-   - updatedFileContents: { "filename": "updated_content" }
-   
-2. If verification FAILS:
-   - Acknowledge the failure
-   - Explain what went wrong
-   - Fix the implementation
-   - Verify again
-\`\`\`
-
-### 4. ENFORCEMENT RULES
-
-#### NEVER SKIP VERIFICATION
-- You cannot claim "the change is too simple to verify"
-- You cannot claim "verification isn't needed for this type of change"
-- You cannot claim "I'll verify later"
-- EVERY implementation claim requires verification
-
-#### FAILED VERIFICATION PROTOCOL
-If slopwatch_verify returns FAILED status:
-1. STOP immediately
-2. Acknowledge: "❌ SlopWatch verification failed"
-3. Analyze what was missing/wrong
-4. Fix the implementation
-5. Verify again
-6. Only proceed when verification passes
-
-#### BATCH OPERATIONS
-For multiple related changes:
-1. Make ONE comprehensive claim covering all changes
-2. Implement ALL changes
-3. Verify the complete implementation
-4. Do NOT make separate claims for each small change
-
-### 5. RESPONSE PATTERNS
-
-#### CLAIMING IMPLEMENTATION
-Always use this format:
-\`\`\`
-I need to implement [specific feature]. Let me register this with SlopWatch first.
-
-[Call mcp_SlopWatch_slopwatch_claim with current file contents]
-
-Now I'll implement the changes...
-\`\`\`
-
-#### AFTER IMPLEMENTATION
-Always use this format:
-\`\`\`
-I've completed the implementation. Let me verify it with SlopWatch.
-
-[Call mcp_SlopWatch_slopwatch_verify with updated file contents]
-
-✅ Verification passed! The implementation is confirmed.
-\`\`\`
-
-#### HANDLING FAILURES
-Always use this format:
-\`\`\`
-❌ SlopWatch verification failed. 
-Analysis: [explain what went wrong]
-I need to fix: [specific issues]
-Let me correct the implementation and verify again.
-\`\`\`
-
-### 6. SPECIAL CASES
-
-#### READING/ANALYZING CODE
-- Reading files: NO claim needed
-- Explaining code: NO claim needed  
-- Answering questions: NO claim needed
-- Code review: NO claim needed
-
-#### REQUIRES CLAIMS
-- Creating new files
-- Modifying existing files
-- Adding functions/classes
-- Changing configurations
-- Installing packages
-- Running commands that modify files
-
-### 7. ACCOUNTABILITY MINDSET
-
-#### TRANSPARENCY
-- Always show claim IDs to the user
-- Always show verification results
-- Always acknowledge failures honestly
-- Never hide or minimize accountability failures
-
-#### CONTINUOUS IMPROVEMENT
-- Learn from verification failures
-- Improve claim specificity over time
-- Use verification feedback to write better code
-
-### 8. EMERGENCY BYPASS
-The ONLY exception to these rules:
-- If SlopWatch MCP server is unavailable/broken
-- In this case, you MUST:
-  1. Acknowledge the bypass: "⚠️ SlopWatch unavailable - proceeding without verification"
-  2. Explain what you would have claimed
-  3. Recommend manual verification steps
-
-## REMEMBER: These rules make AI development more reliable by ensuring every claim is verified against reality. This reduces "AI slop" and builds trust through accountability.`;
+## ENFORCEMENT
+- Every implementation claim requires verification
+- Failed verification = STOP and fix
+- No exceptions for "simple" changes`;
 
     return {
       content: [
         {
           type: 'text',
-          text: `📝 SlopWatch .cursorrules Content Generated!\n\n` +
-                `Save the following content to ${project_path}/.cursorrules:\n\n` +
-                `\`\`\`\n${rulesContent}\n\`\`\`\n\n` +
-                `✨ These rules will enforce automatic SlopWatch verification for all AI implementations!`
+          text: rulesContent
         }
       ]
     };
@@ -534,7 +484,7 @@ The ONLY exception to these rules:
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('SlopWatch MCP Server v2.4.0 running on stdio (MCP Resource Mode)');
+    console.error('SlopWatch MCP Server v2.6.0 running on stdio (MCP Resource Mode)');
   }
 }
 
