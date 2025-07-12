@@ -1,6 +1,6 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "private": false,
   "publishConfig": {
     "access": "public"
