@@ -453,23 +453,112 @@ class SlopWatchServer {
   async handleSetupRules(args) {
     const { project_path, overwrite = false } = args;
     
-    // Return minimal rules content focusing on core enforcement
-    const rulesContent = `# SlopWatch AI Accountability Rules
+    // Return updated rules content for v2.6.0 with combined tool and minimal responses
+    const rulesContent = `# SlopWatch AI Accountability Rules v2.6.0
 
 ## MANDATORY PROTOCOL
-- Before ANY code changes: Call mcp_SlopWatch_slopwatch_claim
-- After implementation: Call mcp_SlopWatch_slopwatch_verify  
-- NEVER skip verification
-- Fix failed verifications immediately
+
+### OPTION 1: COMBINED TOOL (RECOMMENDED ⭐)
+For most implementations, use the single-call approach:
+\`\`\`
+mcp_SlopWatch_slopwatch_claim_and_verify({
+  claim: "What you implemented",
+  originalFileContents: { "filename": "before_content" },
+  updatedFileContents: { "filename": "after_content" }
+});
+// Response: "✅ PASSED (87%)" or "❌ FAILED (23%)"
+\`\`\`
+
+### OPTION 2: TRADITIONAL 2-STEP (WHEN NEEDED)
+For pre-planning implementations:
+\`\`\`
+// Step 1: Before implementing
+mcp_SlopWatch_slopwatch_claim({
+  claim: "What you're about to implement",
+  fileContents: { "filename": "current_content" }
+});
+// Response: "Claim ID: abc123"
+
+// Step 2: After implementing  
+mcp_SlopWatch_slopwatch_verify({
+  claimId: "abc123",
+  updatedFileContents: { "filename": "updated_content" }
+});
+// Response: "✅ PASSED (92%)" or "❌ FAILED (15%)"
+\`\`\`
 
 ## TRIGGER PHRASES
-"I will implement/add/create/modify/fix/update/build/write"
-"Let me implement/add/create/modify/fix/update"
+When you mention ANY of these, you MUST use SlopWatch:
+- "I will implement/add/create/modify/fix/update/build/write"
+- "Let me implement/add/create/modify/fix/update"
+- "I'll add/create/implement/modify/fix/update"
 
-## ENFORCEMENT
+## ENFORCEMENT RULES
+
+### NEVER SKIP VERIFICATION
 - Every implementation claim requires verification
-- Failed verification = STOP and fix
-- No exceptions for "simple" changes`;
+- No exceptions for "simple" changes
+- Failed verification = STOP and fix immediately
+
+### ULTRA-MINIMAL RESPONSES (v2.6.0)
+SlopWatch now returns minimal responses:
+- Claim: "Claim ID: abc123"
+- Verify: "✅ PASSED (87%)" or "❌ FAILED (23%)"
+- Combined: "✅ PASSED (87%)" or "❌ FAILED (23%)"
+- Status: "Accuracy: 95% (19/20)"
+
+### WORKFLOW PATTERNS
+
+#### RECOMMENDED: Combined Tool Workflow
+\`\`\`
+I'll implement [feature]. Let me verify it with SlopWatch.
+
+[Implement the code changes]
+
+[Call mcp_SlopWatch_slopwatch_claim_and_verify with before/after content]
+
+✅ PASSED (87%) - Implementation verified!
+\`\`\`
+
+#### ALTERNATIVE: Traditional Workflow  
+\`\`\`
+I'll implement [feature]. Let me register this with SlopWatch first.
+
+[Call mcp_SlopWatch_slopwatch_claim]
+Claim ID: abc123
+
+[Implement the code changes]
+
+[Call mcp_SlopWatch_slopwatch_verify]
+✅ PASSED (92%) - Implementation verified!
+\`\`\`
+
+#### FAILURE HANDLING
+\`\`\`
+❌ FAILED (23%) - SlopWatch verification failed.
+Let me analyze and fix the implementation.
+[Fix the code and verify again]
+\`\`\`
+
+## SPECIAL CASES
+
+### NO CLAIM NEEDED:
+- Reading/analyzing code
+- Explaining existing code  
+- Answering questions
+- Code reviews
+
+### REQUIRES CLAIMS:
+- Creating/modifying files
+- Adding functions/classes
+- Configuration changes
+- Package installations
+
+## EMERGENCY BYPASS
+Only if SlopWatch is unavailable:
+"⚠️ SlopWatch unavailable - proceeding without verification"
+
+Remember: SlopWatch v2.6.0 features ultra-minimal responses and combined tools for seamless AI accountability.`;
 
     return {
       content: [
