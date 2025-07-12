@@ -6,21 +6,20 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import fs from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
 import analytics from './analytics.js';
 
 /**
  * SlopWatch MCP Server - AI Accountability System
  * Tracks what AI claims vs what it actually implements
+ * Works with MCP resources instead of direct file system access
  */
 class SlopWatchServer {
   constructor() {
     this.server = new Server(
       {
         name: 'slopwatch-server',
-        version: '2.2.0',
+        version: '2.4.0',
       },
       {
         capabilities: {
@@ -31,7 +30,6 @@ class SlopWatchServer {
 
     this.claims = new Map();
     this.verificationResults = [];
-    this.fileSnapshots = new Map(); // Store file hashes at claim time
     
     this.setupToolHandlers();
   }
@@ -51,14 +49,10 @@ class SlopWatchServer {
                   type: 'string',
                   description: 'What you are implementing'
                 },
-                files: {
-                  type: 'array',
-                  description: 'Files you will modify',
-                  items: { type: 'string' }
-                },
-                workingDirectory: {
-                  type: 'string',
-                  description: 'Working directory where files are located (optional)'
+                fileContents: {
+                  type: 'object',
+                  description: 'Current content of files you will modify (filename -> content)',
+                  additionalProperties: { type: 'string' }
                 }
               },
               required: ['claim']
@@ -73,9 +67,14 @@ class SlopWatchServer {
                 claimId: {
                   type: 'string',
                   description: 'ID of the claim to verify'
+                },
+                updatedFileContents: {
+                  type: 'object',
+                  description: 'Updated content of files after implementation (filename -> content)',
+                  additionalProperties: { type: 'string' }
                 }
               },
-              required: ['claimId']
+              required: ['claimId', 'updatedFileContents']
             }
           },
           {
@@ -83,7 +82,13 @@ class SlopWatchServer {
             description: 'Get current slop score and statistics',
             inputSchema: {
               type: 'object',
-              properties: {}
+              properties: {
+                random_string: {
+                  type: 'string',
+                  description: 'Dummy parameter for no-parameter tools'
+                }
+              },
+              required: ['random_string']
             }
           },
           {
@@ -128,60 +133,27 @@ class SlopWatchServer {
     });
   }
 
-  resolveFilePath(file, workingDirectory) {
-    // Try multiple path resolution strategies
-    const strategies = [
-      // 1. Use provided working directory
-      workingDirectory ? path.resolve(workingDirectory, file) : null,
-      // 2. Use as absolute path if it starts with /
-      path.isAbsolute(file) ? file : null,
-      // 3. Relative to current process directory (fallback)
-      path.resolve(process.cwd(), file)
-    ];
-
-    for (const filePath of strategies) {
-      if (filePath) {
-        return filePath;
-      }
-    }
-
-    // Final fallback
-    return path.resolve(process.cwd(), file);
-  }
-
   async handleClaim(args) {
-    const { claim, files, workingDirectory } = args;
+    const { claim, fileContents = {} } = args;
     
     const claimId = Math.random().toString(36).substr(2, 9);
     
-    // Capture file snapshots before implementation
+    // Create file snapshots from provided content
     const fileSnapshots = {};
-    if (files && files.length > 0) {
-      for (const file of files) {
-        try {
-          const filePath = this.resolveFilePath(file, workingDirectory);
-          const content = await fs.readFile(filePath, 'utf8');
-          fileSnapshots[file] = {
-            hash: crypto.createHash('sha256').update(content).digest('hex'),
-            content: content,
-            exists: true
-          };
-        } catch (error) {
-          fileSnapshots[file] = {
-            hash: null,
-            content: null,
-            exists: false,
-            error: error.message
-          };
-        }
-      }
+    const fileList = Object.keys(fileContents);
+    
+    for (const [filename, content] of Object.entries(fileContents)) {
+      fileSnapshots[filename] = {
+        hash: crypto.createHash('sha256').update(content || '').digest('hex'),
+        content: content || '',
+        exists: true
+      };
     }
     
     const claimRecord = {
       id: claimId,
       claim,
-      files: files || [],
-      workingDirectory,
+      files: fileList,
       timestamp: new Date().toISOString(),
       status: 'pending',
       fileSnapshots
@@ -190,7 +162,7 @@ class SlopWatchServer {
     this.claims.set(claimId, claimRecord);
 
     // Track claim registration
-    analytics.trackClaim(claimId, files ? files.length : 0, files && files.length > 0);
+    analytics.trackClaim(claimId, fileList.length, fileList.length > 0);
 
     return {
       content: [
@@ -199,17 +171,17 @@ class SlopWatchServer {
           text: `🎯 AI Claim Registered Successfully!\n\n` +
                 `📋 Claim ID: ${claimId}\n` +
                 `🎯 What: ${claim}\n` +
-                `📁 Files: ${files ? files.join(', ') : 'None specified'}\n` +
-                `📸 Snapshots: ${files ? files.length : 0} files captured\n` +
+                `📁 Files: ${fileList.length > 0 ? fileList.join(', ') : 'None specified'}\n` +
+                `📸 Snapshots: ${fileList.length} files captured\n` +
                 `⏰ Registered: ${new Date().toLocaleTimeString()}\n\n` +
-                `✨ Now make your changes, then call slopwatch_verify("${claimId}") to check if you actually did what you claimed!`
+                `✨ Now make your changes, then call slopwatch_verify("${claimId}") with the updated file contents to check if you actually did what you claimed!`
         }
       ]
     };
   }
 
   async handleVerify(args) {
-    const { claimId } = args;
+    const { claimId, updatedFileContents } = args;
     
     const claimRecord = this.claims.get(claimId);
     if (!claimRecord) {
@@ -217,104 +189,122 @@ class SlopWatchServer {
         content: [
           {
             type: 'text',
-            text: `❌ Claim ID ${claimId} not found. Use slopwatch_claim first to register what you're implementing.`
+            text: `❌ Claim ID ${claimId} not found. Please register a claim first using slopwatch_claim.`
           }
         ]
       };
     }
 
-    // Perform real verification by analyzing file changes
-    const verification = await this.analyzeImplementation(claimRecord);
+    try {
+      const result = await this.analyzeImplementation(claimRecord, updatedFileContents);
+      
+      // Store verification result
+      claimRecord.status = result.isVerified ? 'verified' : 'failed';
+      this.verificationResults.push({
+        ...result,
+        claimId,
+        timestamp: new Date().toISOString(),
+        claim: claimRecord.claim
+      });
 
-    claimRecord.status = verification.isVerified ? 'verified' : 'failed';
-    claimRecord.verification = verification;
-    
-    this.verificationResults.push({
-      claimId,
-      claim: claimRecord.claim,
-      isVerified: verification.isVerified,
-      confidence: verification.confidence,
-      timestamp: new Date().toISOString()
-    });
+      // Track verification
+      analytics.trackVerification(claimId, result.isVerified, result.confidence);
 
-    // Track verification results
-    analytics.trackVerification(
-      claimId, 
-      verification.isVerified, 
-      verification.confidence, 
-      claimRecord.files ? claimRecord.files.length : 0,
-      0 // keywords found - would need to extract from verification details
-    );
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `${verification.isVerified ? '✅' : '❌'} Verification Complete!\n\n` +
-                `📋 Claim: ${claimRecord.claim}\n` +
-                `🎯 Status: ${verification.isVerified ? 'VERIFIED' : 'FAILED'}\n` +
-                `📊 Confidence: ${verification.confidence}%\n` +
-                `📝 Details: ${verification.details}\n` +
-                `📊 Analysis: ${verification.analysis || 'No detailed analysis available'}`
-        }
-      ]
-    };
+      const statusEmoji = result.isVerified ? '✅' : '❌';
+      const statusText = result.isVerified ? 'PASSED' : 'FAILED';
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${statusEmoji} Verification Complete!\n\n` +
+                  `📋 Claim: ${claimRecord.claim}\n` +
+                  `🎯 Status: ${statusText}\n` +
+                  `📊 Confidence: ${result.confidence}%\n` +
+                  `📝 Details: ${result.details}\n` +
+                  `📊 Analysis: ${result.analysis}`
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Verification failed: ${error.message}`
+          }
+        ]
+      };
+    }
   }
 
-  async analyzeImplementation(claimRecord) {
+  async analyzeImplementation(claimRecord, updatedFileContents) {
     const { claim, files, fileSnapshots } = claimRecord;
     
-    // If no files specified, use basic text analysis
-    if (!files || files.length === 0) {
+    // If no files specified in original claim, but we have updated content, use those files
+    const filesToCheck = files.length > 0 ? files : Object.keys(updatedFileContents);
+    
+    if (filesToCheck.length === 0) {
       return {
         isVerified: false,
         confidence: 0,
         details: 'No files specified for verification',
-        analysis: 'Cannot verify implementation without file tracking'
+        analysis: 'Cannot verify implementation without file content'
       };
     }
 
     let changedFiles = 0;
-    let totalFiles = files.length;
+    let totalFiles = filesToCheck.length;
     let analysisDetails = [];
     let keywordMatches = 0;
 
     // Extract keywords from the claim
     const keywords = this.extractKeywords(claim);
     
-    for (const file of files) {
-      try {
-        const filePath = this.resolveFilePath(file, claimRecord.workingDirectory);
-        const currentContent = await fs.readFile(filePath, 'utf8');
-        const currentHash = crypto.createHash('sha256').update(currentContent).digest('hex');
-        
-        const snapshot = fileSnapshots[file];
-        if (!snapshot) {
-          analysisDetails.push(`❓ ${file}: No snapshot found`);
-          continue;
-        }
-
-        // Check if file was modified
-        if (snapshot.hash !== currentHash) {
+    for (const filename of filesToCheck) {
+      const updatedContent = updatedFileContents[filename] || '';
+      const currentHash = crypto.createHash('sha256').update(updatedContent).digest('hex');
+      
+      const snapshot = fileSnapshots[filename];
+      if (!snapshot) {
+        // If no snapshot exists, treat empty string as original content
+        const originalHash = crypto.createHash('sha256').update('').digest('hex');
+        if (originalHash !== currentHash && updatedContent.length > 0) {
           changedFiles++;
           
-          // Analyze content changes for keywords
-          const addedContent = this.getAddedContent(snapshot.content || '', currentContent);
+          // Analyze content for keywords
           const foundKeywords = keywords.filter(keyword => 
-            addedContent.toLowerCase().includes(keyword.toLowerCase())
+            updatedContent.toLowerCase().includes(keyword.toLowerCase())
           );
           
           keywordMatches += foundKeywords.length;
           
           analysisDetails.push(
-            `✅ ${file}: Modified (${foundKeywords.length} keywords found: ${foundKeywords.join(', ')})`
+            `✅ ${filename}: New file created (${foundKeywords.length} keywords found: ${foundKeywords.join(', ')})`
           );
         } else {
-          analysisDetails.push(`❌ ${file}: No changes detected`);
+          analysisDetails.push(`❌ ${filename}: No content provided`);
         }
+        continue;
+      }
+
+      // Check if file was modified
+      if (snapshot.hash !== currentHash) {
+        changedFiles++;
         
-      } catch (error) {
-        analysisDetails.push(`❌ ${file}: Error reading file - ${error.message}`);
+        // Analyze content changes for keywords
+        const addedContent = this.getAddedContent(snapshot.content || '', updatedContent);
+        const foundKeywords = keywords.filter(keyword => 
+          addedContent.toLowerCase().includes(keyword.toLowerCase())
+        );
+        
+        keywordMatches += foundKeywords.length;
+        
+        analysisDetails.push(
+          `✅ ${filename}: Modified (${foundKeywords.length} keywords found: ${foundKeywords.join(', ')})`
+        );
+      } else {
+        analysisDetails.push(`❌ ${filename}: No changes detected`);
       }
     }
 
@@ -386,26 +376,9 @@ class SlopWatchServer {
   async handleSetupRules(args) {
     const { project_path, overwrite = false } = args;
     
-    const rulesPath = path.join(project_path, '.cursorrules');
-    
-    try {
-      // Check if file exists
-      const fileExists = await fs.access(rulesPath).then(() => true).catch(() => false);
-      
-      if (fileExists && !overwrite) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `❌ .cursorrules file already exists at ${rulesPath}\n\n` +
-                    `Use overwrite: true to replace it, or manually merge the rules.\n\n` +
-                    `Current file preserved to avoid overwriting your existing rules.`
-            }
-          ]
-        };
-      }
-
-      const rulesContent = `# AI Accountability Rules - SlopWatch Integration
+    // Since we can't access file system directly in hosted mode,
+    // return the rules content for the user to save manually
+    const rulesContent = `# AI Accountability Rules - SlopWatch Integration
 # These rules enforce automatic verification of AI implementations
 
 ## MANDATORY ACCOUNTABILITY PROTOCOL
@@ -432,7 +405,7 @@ BEFORE making ANY code changes, you MUST:
 \`\`\`
 1. Call: mcp_SlopWatch_slopwatch_claim
    - claim: "Specific description of what you're implementing"
-   - files: ["list", "of", "files", "you'll", "modify"]
+   - fileContents: { "filename": "current_content" }
    
 2. Save the claim ID for verification
 \`\`\`
@@ -442,6 +415,7 @@ AFTER making changes, you MUST:
 \`\`\`
 1. Call: mcp_SlopWatch_slopwatch_verify
    - claimId: "the_claim_id_from_step_2"
+   - updatedFileContents: { "filename": "updated_content" }
    
 2. If verification FAILS:
    - Acknowledge the failure
@@ -481,7 +455,7 @@ Always use this format:
 \`\`\`
 I need to implement [specific feature]. Let me register this with SlopWatch first.
 
-[Call mcp_SlopWatch_slopwatch_claim]
+[Call mcp_SlopWatch_slopwatch_claim with current file contents]
 
 Now I'll implement the changes...
 \`\`\`
@@ -491,7 +465,7 @@ Always use this format:
 \`\`\`
 I've completed the implementation. Let me verify it with SlopWatch.
 
-[Call mcp_SlopWatch_slopwatch_verify]
+[Call mcp_SlopWatch_slopwatch_verify with updated file contents]
 
 ✅ Verification passed! The implementation is confirmed.
 \`\`\`
@@ -544,61 +518,26 @@ The ONLY exception to these rules:
 
 ## REMEMBER: These rules make AI development more reliable by ensuring every claim is verified against reality. This reduces "AI slop" and builds trust through accountability.`;
 
-      await fs.writeFile(rulesPath, rulesContent, 'utf8');
-      
-      // Track successful rules setup
-      analytics.trackRulesSetup(project_path, overwrite, true);
-      
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ SlopWatch .cursorrules file created successfully!\n\n` +
-                  `📁 Location: ${rulesPath}\n` +
-                  `📋 Rules: AI accountability enforcement enabled\n` +
-                  `🎯 Effect: All AI implementations will now be automatically verified\n\n` +
-                  `The rules are now active for this project. AI assistants will automatically:\n` +
-                  `• Register claims before implementing\n` +
-                  `• Verify implementations after changes\n` +
-                  `• Fix failed verifications\n\n` +
-                  `🚀 Your project now has automatic AI accountability!`
-          }
-        ]
-      };
-      
-    } catch (error) {
-      // Track failed rules setup
-      analytics.trackRulesSetup(project_path, overwrite, false);
-      
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `❌ Error creating .cursorrules file: ${error.message}\n\n` +
-                  `Please check that:\n` +
-                  `• The project path exists: ${project_path}\n` +
-                  `• You have write permissions\n` +
-                  `• The path is accessible\n\n` +
-                  `You can also manually create the file using the setup guide.`
-          }
-        ]
-      };
-    }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `📝 SlopWatch .cursorrules Content Generated!\n\n` +
+                `Save the following content to ${project_path}/.cursorrules:\n\n` +
+                `\`\`\`\n${rulesContent}\n\`\`\`\n\n` +
+                `✨ These rules will enforce automatic SlopWatch verification for all AI implementations!`
+        }
+      ]
+    };
   }
 
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('🚀 SlopWatch MCP Server (Official SDK) running');
-    
-    // Track server startup
-    analytics.trackServerStart('2.2.0', 'stdio', ['claim', 'verify', 'status', 'setup_rules']);
+    console.error('SlopWatch MCP Server v2.4.0 running on stdio (MCP Resource Mode)');
   }
 }
 
-// Run the server
+// Start the server
 const server = new SlopWatchServer();
-server.run().catch((error) => {
-  console.error('Failed to start SlopWatch Server:', error);
-  process.exit(1);
-}); 
+server.run().catch(console.error); 
