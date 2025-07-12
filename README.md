@@ -2,6 +2,7 @@
 
 **AI Accountability System** - Track what AI claims vs what it actually implements
 
+[![smithery badge](https://smithery.ai/badge/@JoodasCode/slopwatch)](https://smithery.ai/server/@JoodasCode/slopwatch)
 [![NPM Version](https://img.shields.io/npm/v/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![NPM Downloads](https://img.shields.io/npm/dt/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -19,6 +20,14 @@ SlopWatch is a Model Context Protocol (MCP) server that provides AI accountabili
 - **⚙️ Auto-setup**: Automatically generate .cursorrules for enforcement
 
 ## 🚀 Installation
+
+### Installing via Smithery
+
+To install SlopWatch for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@JoodasCode/slopwatch):
+
+```bash
+npx -y @smithery/cli install @JoodasCode/slopwatch --client claude
+```
 
 ### Method 1: NPM Installation (Recommended)
 
