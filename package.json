@@ -1,6 +1,6 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
   "main": "src/mcp-server.js",
   "module": "src/mcp-server.js",
@@ -24,7 +24,8 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "nanoid": "^5.0.8"
+    "nanoid": "^5.0.8",
+    "slopwatch-mcp-server": "^2.0.2"
   },
   "engines": {
     "node": ">=18.0.0"

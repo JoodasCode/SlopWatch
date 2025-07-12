@@ -3,6 +3,7 @@
 **AI Accountability System** - Track what AI claims vs what it actually implements
 
 [![NPM Version](https://img.shields.io/npm/v/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
+[![NPM Downloads](https://img.shields.io/npm/dt/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 What is SlopWatch?
@@ -18,17 +19,23 @@ SlopWatch is a Model Context Protocol (MCP) server that provides AI accountabili
 
 ## 🚀 Installation
 
-### Method 1: NPM Installation (Recommended)
+### Method 1: NPM Installation (Recommended) ⭐
 
 ```bash
-# Install globally
+# Install globally (recommended for MCP usage)
 npm install -g slopwatch-mcp-server
-
-# Or install locally in your project
-npm install slopwatch-mcp-server
 ```
 
-### Method 2: Direct from GitHub
+**That's it!** The `slopwatch-mcp-server` command is now available globally.
+
+### Method 2: One-Line Install Script
+
+```bash
+# Quick install without NPM
+curl -fsSL https://raw.githubusercontent.com/JoodasCode/slopdetector/main/install-local.sh | bash
+```
+
+### Method 3: Manual Installation
 
 ```bash
 git clone https://github.com/JoodasCode/slopdetector.git
