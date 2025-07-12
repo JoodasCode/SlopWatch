@@ -55,6 +55,10 @@ class SlopWatchServer {
                   type: 'array',
                   description: 'Files you will modify',
                   items: { type: 'string' }
+                },
+                workingDirectory: {
+                  type: 'string',
+                  description: 'Working directory where files are located (optional)'
                 }
               },
               required: ['claim']
@@ -124,8 +128,29 @@ class SlopWatchServer {
     });
   }
 
+  resolveFilePath(file, workingDirectory) {
+    // Try multiple path resolution strategies
+    const strategies = [
+      // 1. Use provided working directory
+      workingDirectory ? path.resolve(workingDirectory, file) : null,
+      // 2. Use as absolute path if it starts with /
+      path.isAbsolute(file) ? file : null,
+      // 3. Relative to current process directory (fallback)
+      path.resolve(process.cwd(), file)
+    ];
+
+    for (const filePath of strategies) {
+      if (filePath) {
+        return filePath;
+      }
+    }
+
+    // Final fallback
+    return path.resolve(process.cwd(), file);
+  }
+
   async handleClaim(args) {
-    const { claim, files } = args;
+    const { claim, files, workingDirectory } = args;
     
     const claimId = Math.random().toString(36).substr(2, 9);
     
@@ -134,7 +159,7 @@ class SlopWatchServer {
     if (files && files.length > 0) {
       for (const file of files) {
         try {
-          const filePath = path.resolve(process.cwd(), file);
+          const filePath = this.resolveFilePath(file, workingDirectory);
           const content = await fs.readFile(filePath, 'utf8');
           fileSnapshots[file] = {
             hash: crypto.createHash('sha256').update(content).digest('hex'),
@@ -156,6 +181,7 @@ class SlopWatchServer {
       id: claimId,
       claim,
       files: files || [],
+      workingDirectory,
       timestamp: new Date().toISOString(),
       status: 'pending',
       fileSnapshots
@@ -258,7 +284,7 @@ class SlopWatchServer {
     
     for (const file of files) {
       try {
-        const filePath = path.resolve(process.cwd(), file);
+        const filePath = this.resolveFilePath(file, claimRecord.workingDirectory);
         const currentContent = await fs.readFile(filePath, 'utf8');
         const currentHash = crypto.createHash('sha256').update(currentContent).digest('hex');
         
