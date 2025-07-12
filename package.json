@@ -1,6 +1,10 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.2.0",
+  "version": "2.2.1",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
   "main": "src/mcp-server.js",
   "bin": {
