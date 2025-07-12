@@ -1,27 +1,29 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.2.3",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
+  "version": "2.2.0",
   "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
   "main": "src/mcp-server.js",
+  "module": "src/mcp-server.js",
   "bin": {
     "slopwatch-mcp-server": "src/mcp-server.js"
   },
   "type": "module",
   "scripts": {
-    "start": "node src/mcp-server.js"
+    "start": "node src/mcp-server.js",
+    "dev": "node src/mcp-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "mcp",
     "ai",
     "accountability",
     "verification",
-    "model-context-protocol"
+    "model-context-protocol",
+    "cursor",
+    "claude",
+    "ai-slop"
   ],
-  "author": "JoodasCode",
+  "author": "Slopdetector",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
@@ -40,6 +42,7 @@
   },
   "files": [
     "src/",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ]
-}
+} 

@@ -1,11 +1,10 @@
 {
   "mcpServers": {
     "slopwatch": {
-      "command": "npx",
-      "args": ["slopwatch-mcp-server"],
-      "cwd": "/Users/ahassan/Documents/Slop",
+      "command": "node",
+      "args": ["src/mcp-server.js"],
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "development"
       }
     }
   }

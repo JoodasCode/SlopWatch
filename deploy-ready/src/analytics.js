@@ -1,18 +1,13 @@
-#!/usr/bin/env node
-
-// Enhanced Analytics for SlopWatch MCP Server
-// Sends data to Vercel-hosted analytics API
-
-import crypto from 'crypto';
-import os from 'os';
+// Analytics for SlopWatch MCP Server
+// Optional usage tracking to help improve the tool
 
 class SlopWatchAnalytics {
   constructor() {
-    this.apiUrl = process.env.ANALYTICS_API_URL || 'https://slopdetector-nu.vercel.app/api/analytics';
-    this.analyticsSecret = process.env.ANALYTICS_SECRET || 'b3ad9c84a61a0abd783c237584fb5dfa09f5dafca198bc950cb3e213a68b37c9';
+    this.apiUrl = process.env.ANALYTICS_API_URL || null;
+    this.analyticsSecret = process.env.ANALYTICS_SECRET || null;
     this.userId = this.generateUserId();
     this.sessionId = this.generateSessionId();
-    this.isEnabled = process.env.ANALYTICS_ENABLED !== 'false';
+    this.isEnabled = process.env.ANALYTICS_ENABLED !== 'false' && this.apiUrl && this.analyticsSecret;
     
     if (this.isEnabled) {
       console.log('📊 SlopWatch Analytics enabled');
@@ -21,6 +16,8 @@ class SlopWatchAnalytics {
 
   generateUserId() {
     // Generate a persistent but anonymous user ID
+    const crypto = require('crypto');
+    const os = require('os');
     const userInfo = `${os.hostname()}-${os.userInfo().username}`;
     return crypto.createHash('sha256').update(userInfo).digest('hex').substring(0, 16);
   }

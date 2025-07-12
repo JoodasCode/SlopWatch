@@ -9,16 +9,16 @@ Transform your Cursor IDE into an AI accountability powerhouse in 5 minutes!
 - **Provides transparency** - See exactly what AI promised vs. what it delivered
 - **Improves reliability** - Reduces "AI slop" through systematic accountability
 
-## Quick Setup (5 Minutes)
+## Quick Setup (2 Minutes!)
 
 ### Step 1: Install SlopWatch MCP Server
 
 ```bash
 # Install the NPM package
-npm install -g slopwatch-mcp-server@2.1.0
+npm install -g slopwatch-mcp-server@2.2.0
 
 # Or use npx (no installation needed)
-npx slopwatch-mcp-server@2.1.0 --version
+npx slopwatch-mcp-server@2.2.0 --version
 ```
 
 ### Step 2: Configure Cursor MCP
@@ -27,7 +27,7 @@ npx slopwatch-mcp-server@2.1.0 --version
 2. Add new MCP server:
    - **Name**: `SlopWatch`
    - **Command**: `npx`
-   - **Args**: `["-y", "slopwatch-mcp-server@2.1.0"]`
+   - **Args**: `["-y", "slopwatch-mcp-server@2.2.0"]`
 
 Or manually edit `~/.cursor/mcp.json`:
 ```json
@@ -36,15 +36,22 @@ Or manually edit `~/.cursor/mcp.json`:
     "SlopWatch": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "slopwatch-mcp-server@2.1.0"]
+      "args": ["-y", "slopwatch-mcp-server@2.2.0"]
     }
   }
 }
 ```
 
-### Step 3: Add Accountability Rules
+### Step 3: Auto-Generate Accountability Rules ✨ NEW!
 
-Copy the `.cursorrules` file from this repository to your project root, or add these rules to your existing `.cursorrules`:
+**No more manual copying!** Just ask Cursor to set up the rules automatically:
+
+1. Open Cursor Agent mode
+2. Type: "Use slopwatch_setup_rules to create the accountability rules for this project"
+3. Done! ✅
+
+**Alternative - Manual Setup:**
+If you prefer to copy manually, add these rules to your `.cursorrules`:
 
 ```markdown
 # AI Accountability Rules - SlopWatch Integration
@@ -81,6 +88,8 @@ AFTER making changes, you MUST:
    - Implement the function
    - Verify the implementation
    - Show you the results
+
+**Pro Tip**: If you used the auto-setup, the rules are already active! If you set them up manually, restart Cursor for the rules to take effect.
 
 ## Example Usage
 
