@@ -1,1 +1,2 @@
-runtime: "container" 
+runtime: "container"
+# v2.6.0 deployment refresh - includes combined slopwatch_claim_and_verify tool 
