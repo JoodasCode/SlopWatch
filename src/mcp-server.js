@@ -19,7 +19,7 @@ class SlopWatchServer {
     this.server = new Server(
       {
         name: 'slopwatch-server',
-        version: '2.1.0',
+        version: '2.2.0',
       },
       {
         capabilities: {
@@ -80,6 +80,25 @@ class SlopWatchServer {
               type: 'object',
               properties: {}
             }
+          },
+          {
+            name: 'slopwatch_setup_rules',
+            description: 'Generate .cursorrules file with AI accountability enforcement',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                project_path: {
+                  type: 'string',
+                  description: 'Path to project directory where .cursorrules should be created'
+                },
+                overwrite: {
+                  type: 'boolean',
+                  description: 'Whether to overwrite existing .cursorrules file',
+                  default: false
+                }
+              },
+              required: ['project_path']
+            }
           }
         ]
       };
@@ -96,6 +115,8 @@ class SlopWatchServer {
           return await this.handleVerify(args);
         case 'slopwatch_status':
           return await this.handleStatus(args);
+        case 'slopwatch_setup_rules':
+          return await this.handleSetupRules(args);
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
@@ -321,6 +342,203 @@ class SlopWatchServer {
         }
       ]
     };
+  }
+
+  async handleSetupRules(args) {
+    const { project_path, overwrite = false } = args;
+    
+    const rulesPath = path.join(project_path, '.cursorrules');
+    
+    try {
+      // Check if file exists
+      const fileExists = await fs.access(rulesPath).then(() => true).catch(() => false);
+      
+      if (fileExists && !overwrite) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ .cursorrules file already exists at ${rulesPath}\n\n` +
+                    `Use overwrite: true to replace it, or manually merge the rules.\n\n` +
+                    `Current file preserved to avoid overwriting your existing rules.`
+            }
+          ]
+        };
+      }
+
+      const rulesContent = `# AI Accountability Rules - SlopWatch Integration
+# These rules enforce automatic verification of AI implementations
+
+## MANDATORY ACCOUNTABILITY PROTOCOL
+
+### 1. IMPLEMENTATION CLAIM DETECTION
+When you mention ANY of these phrases, you MUST use SlopWatch:
+- "I will implement"
+- "I will add"
+- "I will create" 
+- "I will modify"
+- "I will fix"
+- "I will update"
+- "I will build"
+- "I will write"
+- "Let me implement"
+- "Let me add"
+- "Let me create"
+- "Let me modify"
+- "Let me fix"
+- "Let me update"
+
+### 2. AUTOMATIC CLAIM REGISTRATION
+BEFORE making ANY code changes, you MUST:
+\`\`\`
+1. Call: mcp_SlopWatch_slopwatch_claim
+   - claim: "Specific description of what you're implementing"
+   - files: ["list", "of", "files", "you'll", "modify"]
+   
+2. Save the claim ID for verification
+\`\`\`
+
+### 3. MANDATORY VERIFICATION
+AFTER making changes, you MUST:
+\`\`\`
+1. Call: mcp_SlopWatch_slopwatch_verify
+   - claimId: "the_claim_id_from_step_2"
+   
+2. If verification FAILS:
+   - Acknowledge the failure
+   - Explain what went wrong
+   - Fix the implementation
+   - Verify again
+\`\`\`
+
+### 4. ENFORCEMENT RULES
+
+#### NEVER SKIP VERIFICATION
+- You cannot claim "the change is too simple to verify"
+- You cannot claim "verification isn't needed for this type of change"
+- You cannot claim "I'll verify later"
+- EVERY implementation claim requires verification
+
+#### FAILED VERIFICATION PROTOCOL
+If slopwatch_verify returns FAILED status:
+1. STOP immediately
+2. Acknowledge: "❌ SlopWatch verification failed"
+3. Analyze what was missing/wrong
+4. Fix the implementation
+5. Verify again
+6. Only proceed when verification passes
+
+#### BATCH OPERATIONS
+For multiple related changes:
+1. Make ONE comprehensive claim covering all changes
+2. Implement ALL changes
+3. Verify the complete implementation
+4. Do NOT make separate claims for each small change
+
+### 5. RESPONSE PATTERNS
+
+#### CLAIMING IMPLEMENTATION
+Always use this format:
+\`\`\`
+I need to implement [specific feature]. Let me register this with SlopWatch first.
+
+[Call mcp_SlopWatch_slopwatch_claim]
+
+Now I'll implement the changes...
+\`\`\`
+
+#### AFTER IMPLEMENTATION
+Always use this format:
+\`\`\`
+I've completed the implementation. Let me verify it with SlopWatch.
+
+[Call mcp_SlopWatch_slopwatch_verify]
+
+✅ Verification passed! The implementation is confirmed.
+\`\`\`
+
+#### HANDLING FAILURES
+Always use this format:
+\`\`\`
+❌ SlopWatch verification failed. 
+Analysis: [explain what went wrong]
+I need to fix: [specific issues]
+Let me correct the implementation and verify again.
+\`\`\`
+
+### 6. SPECIAL CASES
+
+#### READING/ANALYZING CODE
+- Reading files: NO claim needed
+- Explaining code: NO claim needed  
+- Answering questions: NO claim needed
+- Code review: NO claim needed
+
+#### REQUIRES CLAIMS
+- Creating new files
+- Modifying existing files
+- Adding functions/classes
+- Changing configurations
+- Installing packages
+- Running commands that modify files
+
+### 7. ACCOUNTABILITY MINDSET
+
+#### TRANSPARENCY
+- Always show claim IDs to the user
+- Always show verification results
+- Always acknowledge failures honestly
+- Never hide or minimize accountability failures
+
+#### CONTINUOUS IMPROVEMENT
+- Learn from verification failures
+- Improve claim specificity over time
+- Use verification feedback to write better code
+
+### 8. EMERGENCY BYPASS
+The ONLY exception to these rules:
+- If SlopWatch MCP server is unavailable/broken
+- In this case, you MUST:
+  1. Acknowledge the bypass: "⚠️ SlopWatch unavailable - proceeding without verification"
+  2. Explain what you would have claimed
+  3. Recommend manual verification steps
+
+## REMEMBER: These rules make AI development more reliable by ensuring every claim is verified against reality. This reduces "AI slop" and builds trust through accountability.`;
+
+      await fs.writeFile(rulesPath, rulesContent, 'utf8');
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ SlopWatch .cursorrules file created successfully!\n\n` +
+                  `📁 Location: ${rulesPath}\n` +
+                  `📋 Rules: AI accountability enforcement enabled\n` +
+                  `🎯 Effect: All AI implementations will now be automatically verified\n\n` +
+                  `The rules are now active for this project. AI assistants will automatically:\n` +
+                  `• Register claims before implementing\n` +
+                  `• Verify implementations after changes\n` +
+                  `• Fix failed verifications\n\n` +
+                  `🚀 Your project now has automatic AI accountability!`
+          }
+        ]
+      };
+      
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Error creating .cursorrules file: ${error.message}\n\n` +
+                  `Please check that:\n` +
+                  `• The project path exists: ${project_path}\n` +
+                  `• You have write permissions\n` +
+                  `• The path is accessible\n\n` +
+                  `You can also manually create the file using the setup guide.`
+          }
+        ]
+      };
+    }
   }
 
   async run() {
