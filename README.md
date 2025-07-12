@@ -70,7 +70,12 @@ Get accountability statistics
 - **Repository**: [GitHub](https://github.com/JoodasCode/SlopWatch)
 - **NPM Package**: [slopwatch-mcp-server](https://www.npmjs.com/package/slopwatch-mcp-server)
 - **Issues**: [GitHub Issues](https://github.com/JoodasCode/SlopWatch/issues)
+- **Creator**: [@mindonthechain](https://x.com/mindonthechain)
 
 ## License
 
-MIT License - Free for everyone! 
+MIT License - Free for everyone!
+
+---
+
+**Follow the creator**: [@mindonthechain](https://x.com/mindonthechain) 🚀 

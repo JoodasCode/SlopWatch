@@ -1,6 +1,6 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -21,8 +21,15 @@
     "verification",
     "model-context-protocol"
   ],
-  "author": "JoodasCode",
+  "author": {
+    "name": "JoodasCode",
+    "url": "https://x.com/mindonthechain"
+  },
   "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://x.com/mindonthechain"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "nanoid": "^5.0.8"
