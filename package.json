@@ -1,6 +1,6 @@
 {
   "name": "slopwatch-mcp-server",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -39,6 +39,7 @@
     "url": "https://github.com/JoodasCode/SlopWatch/issues"
   },
   "files": [
-    "src/"
+    "src/",
+    "README.md"
   ]
 }
