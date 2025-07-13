@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "AI Accountability MCP Server - Track what AI claims vs what it actually implements",
+  "description": "🎯 AI Accountability MCP Server for Cursor IDE - Track what AI claims vs what it actually implements. Catch AI lies in real-time with ultra-minimal responses and seamless workflow integration.",
   "main": "src/mcp-server.js",
   "bin": {
     "slopwatch-mcp-server": "src/mcp-server.js"
@@ -19,7 +19,17 @@
     "ai",
     "accountability",
     "verification",
-    "model-context-protocol"
+    "model-context-protocol",
+    "cursor",
+    "cursor-ide",
+    "ai-assistant",
+    "code-verification",
+    "pair-programming",
+    "claude",
+    "anthropic",
+    "development-tools",
+    "code-quality",
+    "ai-tools"
   ],
   "author": {
     "name": "JoodasCode",

@@ -6,13 +6,15 @@
 [![NPM Downloads](https://img.shields.io/npm/dt/slopwatch-mcp-server)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![NPM Downloads Weekly](https://img.shields.io/npm/dw/slopwatch-mcp-server?label=downloads&color=green)](https://www.npmjs.com/package/slopwatch-mcp-server)
 [![Available on Smithery.ai](https://img.shields.io/badge/Available_on-Smithery.ai-orange)](https://smithery.ai/server/@JoodasCode/slopwatch)
+[![Cursor MCP](https://img.shields.io/badge/Cursor-MCP_Compatible-blue)](https://cursor.directory/mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 What's New in v2.6.0
+## 🚀 What's New in v2.7.0
 
 ✨ **Ultra-Minimal Responses** - 90% less verbose output  
 🔄 **Combined Tool** - Single call instead of 2 separate tools  
 ⚡ **Seamless Workflow** - Perfect for AI pair programming  
+🎯 **Cursor MCP Compatible** - Works seamlessly with Cursor IDE
 
 ## 🤔 Why SlopWatch?
 
@@ -22,20 +24,16 @@ Ever had AI say *"I've added error handling to your function"* but it actually d
 
 ## ⚡ Quick Start
 
-### Option 1: Smithery (Recommended - 1 click install)
+### 🎯 Option 1: Smithery (Easiest - 1 click install)
 1. Visit [smithery.ai/server/@JoodasCode/slopwatch](https://smithery.ai/server/@JoodasCode/slopwatch)
 2. Click "Install to Cursor" or "Install to Claude"
 3. Done! ✨
 
-### Option 2: NPM Install
-```bash
-npm install -g slopwatch-mcp-server
-```
+*Smithery handles hosting, authentication, and updates automatically*
 
-## 🔧 Configuration
+### 🔧 Option 2: NPM Direct (Manual Setup)
 
-### Cursor IDE
-Add to your MCP settings:
+**For Cursor IDE:**
 ```json
 {
   "mcpServers": {
@@ -47,7 +45,16 @@ Add to your MCP settings:
 }
 ```
 
-### Claude Desktop
+**Manual Cursor Setup:**
+1. Open Cursor Settings (`Cmd+Shift+J` on Mac, `Ctrl+Shift+J` on Windows)
+2. Go to Features → Model Context Protocol
+3. Click "Add New MCP Server"
+4. Configure:
+   - **Name**: SlopWatch
+   - **Type**: stdio
+   - **Command**: `npx slopwatch-mcp-server`
+
+**For Claude Desktop:**
 Add to your `claude_desktop_config.json`:
 ```json
 {
@@ -58,6 +65,11 @@ Add to your `claude_desktop_config.json`:
     }
   }
 }
+```
+
+**Global NPM Install:**
+```bash
+npm install -g slopwatch-mcp-server
 ```
 
 ## 🎮 How to Use
@@ -108,10 +120,32 @@ slopwatch_verify({
 | Tool | Description | Response |
 |------|-------------|----------|
 | `slopwatch_claim_and_verify` | ⭐ **Recommended** - Claim and verify in one call | `✅ PASSED (87%)` |
-| `slopwatch_claim` | Register what you're about to implement | `Claim ID: abc123` |
-| `slopwatch_verify` | Verify implementation matches claim | `✅ PASSED (92%)` |
 | `slopwatch_status` | Get your accountability stats | `Accuracy: 95% (19/20)` |
 | `slopwatch_setup_rules` | Generate .cursorrules for automatic enforcement | Minimal rules content |
+
+## 🎯 Cursor IDE Integration
+
+SlopWatch is designed specifically for **Cursor IDE** and AI pair programming:
+
+### Automatic Detection
+- Detects when AI claims to implement features
+- Automatically suggests verification
+- Integrates seamlessly with Cursor's Composer
+
+### Smart Workflow
+```
+1. AI: "I'll add error handling to your function"
+2. SlopWatch: Automatically tracks the claim
+3. AI: Implements the code
+4. SlopWatch: Verifies implementation matches claim
+5. Result: ✅ PASSED (92%) or ❌ FAILED (23%)
+```
+
+### Perfect for:
+- **Code reviews** - Verify AI actually implemented what it claimed
+- **Pair programming** - Real-time accountability during development
+- **Learning** - Understand what AI actually does vs what it says
+- **Quality assurance** - Catch implementation gaps before they become bugs
 
 ## 💡 Real-World Examples
 
@@ -120,111 +154,127 @@ slopwatch_verify({
 // AI says: "I'll add rate limiting to your API endpoint"
 
 slopwatch_claim_and_verify({
-  claim: "Add rate limiting to user registration endpoint",
+  claim: "Add rate limiting middleware to /api/users endpoint",
   originalFileContents: {
-    "routes/auth.js": "app.post('/register', async (req, res) => {\n  const user = await createUser(req.body);\n  res.json(user);\n});"
+    "routes/users.js": "app.get('/api/users', (req, res) => { ... })"
   },
   updatedFileContents: {
-    "routes/auth.js": "const rateLimit = require('express-rate-limit');\n\nconst registerLimit = rateLimit({\n  windowMs: 15 * 60 * 1000, // 15 minutes\n  max: 5 // limit each IP to 5 requests per windowMs\n});\n\napp.post('/register', registerLimit, async (req, res) => {\n  const user = await createUser(req.body);\n  res.json(user);\n});"
+    "routes/users.js": "const rateLimit = require('express-rate-limit');\nconst limiter = rateLimit({ windowMs: 15*60*1000, max: 100 });\napp.get('/api/users', limiter, (req, res) => { ... })"
   }
 });
-
-// Result: ✅ PASSED (94%) - AI actually implemented rate limiting!
+// Result: ✅ PASSED (94%)
 ```
 
 ### Example 2: React Component Update
 ```javascript
-// AI says: "I'll add loading states to your component"
+// AI claims: "Added responsive design with CSS Grid"
 
 slopwatch_claim_and_verify({
-  claim: "Add loading spinner to UserProfile component",
+  claim: "Make UserCard component responsive using CSS Grid",
   originalFileContents: {
-    "components/UserProfile.jsx": "export function UserProfile({ userId }) {\n  const user = fetchUser(userId);\n  return <div>{user.name}</div>;\n}"
+    "components/UserCard.jsx": "const UserCard = () => <div className=\"user-card\">...</div>"
   },
   updatedFileContents: {
-    "components/UserProfile.jsx": "export function UserProfile({ userId }) {\n  const [user, setUser] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetchUser(userId).then(userData => {\n      setUser(userData);\n      setLoading(false);\n    });\n  }, [userId]);\n\n  if (loading) return <div className='spinner'>Loading...</div>;\n  return <div>{user.name}</div>;\n}"
+    "components/UserCard.jsx": "const UserCard = () => <div className=\"user-card grid-responsive\">...</div>",
+    "styles/UserCard.css": ".grid-responsive { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }"
   }
 });
-
-// Result: ✅ PASSED (89%) - AI added proper loading state!
+// Result: ✅ PASSED (89%)
 ```
 
-### Example 3: Catching AI Lies
-```javascript
-// AI claims: "I've added comprehensive error handling"
-// But actually just added a comment...
+## 📊 Accountability Stats
 
-slopwatch_claim_and_verify({
-  claim: "Add comprehensive error handling to payment processing",
-  originalFileContents: {
-    "payment.js": "function processPayment(amount) {\n  return stripe.charges.create({ amount });\n}"
-  },
-  updatedFileContents: {
-    "payment.js": "function processPayment(amount) {\n  // TODO: Add error handling\n  return stripe.charges.create({ amount });\n}"
-  }
-});
-
-// Result: ❌ FAILED (15%) - Busted! AI only added a comment, no actual error handling
-```
-
-## 📊 Check Your AI's Accuracy
+Track your AI's honesty over time:
 
 ```javascript
 slopwatch_status();
-// Response: "Accuracy: 87% (26/30)"
+// Returns: "Accuracy: 95% (19/20)"
 ```
 
-Track how often your AI actually implements what it claims vs just talking about it!
+- **Accuracy Score**: Percentage of claims that were actually implemented
+- **Claim Count**: Total number of implementation claims tracked
+- **Success Rate**: How often AI delivers what it promises
 
-## 🎯 Automatic Enforcement
+## 🔧 Advanced Configuration
 
-Generate `.cursorrules` to automatically enforce SlopWatch usage:
+### Auto-Enforcement with .cursorrules
+Generate automatic accountability rules:
 
 ```javascript
-slopwatch_setup_rules({ project_path: "/path/to/project" });
+slopwatch_setup_rules();
 ```
 
-This creates rules that require AI to use SlopWatch for every implementation claim.
+This creates a `.cursorrules` file that automatically enforces SlopWatch verification for all AI implementations.
 
-## 🔥 Benefits
+### Custom Verification
+SlopWatch analyzes:
+- **File changes** - Did the files actually get modified?
+- **Code content** - Does the new code match the claim?
+- **Implementation patterns** - Are the right patterns/libraries used?
+- **Keyword matching** - Does the code contain relevant keywords?
 
-- ✅ **Catch AI lies** before they make it to production
-- ✅ **Build trust** in AI pair programming
-- ✅ **Improve code quality** through verification
-- ✅ **Track accuracy** over time
-- ✅ **Ultra-minimal responses** don't clutter your chat
-- ✅ **Works with any MCP-compatible IDE**
+## 🚀 Why Choose SlopWatch?
 
-## 🌟 Why Developers Love SlopWatch
+### For Developers:
+- **Catch AI lies** before they become bugs
+- **Learn faster** by seeing what AI actually does
+- **Improve code quality** through automatic verification
+- **Save time** with streamlined accountability
 
-> *"Finally caught my AI claiming it added tests when it just added a comment!"*  
-> — @developer_mike
+### For Teams:
+- **Standardize AI interactions** across team members
+- **Track AI reliability** over time
+- **Reduce debugging** from AI implementation gaps
+- **Build trust** in AI-assisted development
 
-> *"The combined tool is a game-changer. One call instead of two!"*  
-> — @sarah_codes
+### For Cursor Users:
+- **Native integration** with Cursor's Composer
+- **Seamless workflow** - no context switching
+- **Real-time feedback** during development
+- **Ultra-minimal responses** - no verbose output
 
-> *"87% accuracy rate revealed my AI was lying way more than I thought."*  
-> — @tech_lead_jane
+## 🎯 Getting Started with Cursor
 
-## 🚀 Getting Started
+1. **Install SlopWatch** using one of the methods above
+2. **Open Cursor** and start a new chat with Composer
+3. **Ask AI to implement something**: "Add input validation to my function"
+4. **Watch SlopWatch work**: It automatically tracks and verifies the claim
+5. **Get instant feedback**: ✅ PASSED (87%) or ❌ FAILED (23%)
 
-1. **Install**: Use Smithery (1-click) or NPM
-2. **Configure**: Add to your IDE's MCP settings  
-3. **Use**: Start with `slopwatch_claim_and_verify` for best experience
-4. **Monitor**: Check your accuracy with `slopwatch_status`
+## 🔍 Troubleshooting
 
-## 🔗 Links
+### Common Issues:
+- **Tools not showing**: Restart Cursor after installation
+- **Verification failed**: Check if files were actually modified
+- **NPM errors**: Try `npm cache clean --force` and reinstall
 
-- **🏠 Homepage**: [smithery.ai/server/@JoodasCode/slopwatch](https://smithery.ai/server/@JoodasCode/slopwatch)
-- **📦 NPM Package**: [slopwatch-mcp-server](https://www.npmjs.com/package/slopwatch-mcp-server)
-- **🐛 Issues**: [GitHub Issues](https://github.com/JoodasCode/SlopWatch/issues)
-- **💬 Creator**: [@mindonthechain](https://x.com/mindonthechain)
+### Debug Mode:
+Enable detailed logging by setting `DEBUG=true` in your environment.
 
-## 📄 License
+## 📈 Roadmap
 
-MIT License - Free for everyone! 🎉
+- [ ] **Visual dashboard** for accountability metrics
+- [ ] **Integration with Git** for commit verification
+- [ ] **Team analytics** for multi-developer projects
+- [ ] **Custom verification rules** for specific frameworks
+- [ ] **IDE extensions** for other editors
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🌟 Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/JoodasCode/SlopWatch/issues)
+- **Documentation**: [Full docs and examples](https://github.com/JoodasCode/SlopWatch#readme)
+- **Community**: [Join the discussion](https://github.com/JoodasCode/SlopWatch/discussions)
 
 ---
 
-**Made with ❤️ by [@mindonthechain](https://x.com/mindonthechain)**  
-*Stop AI slop. Start AI accountability.* 🎯 
+**Made with ❤️ for the Cursor community**
+
+*Stop AI from lying about what it implemented. Start using SlopWatch today!* 
