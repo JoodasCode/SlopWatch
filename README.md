@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/joodascode-slopwatch-badge.png)](https://mseep.ai/app/joodascode-slopwatch)
+
 # 🎯 SlopWatch - AI Accountability MCP Server
 
 **Stop AI from lying about what it implemented!** Track what AI claims vs what it actually does.
